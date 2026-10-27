@@ -4,7 +4,7 @@
 
 **[Live demo →](https://jimmymoloney.github.io/contract-roll-calculator/)** · Click **Load sample data** to try it with fictional customers.
 
-![Dashboard](media/dashboard.png)
+![Dashboard](media/Dashboard.png)
 
 ## The problem
 
@@ -19,8 +19,8 @@ I was working this out by hand with spreadsheets, one customer at a time. So I b
 - **Roll calculator:** models one customer month by month and shows the **latest safe month to roll**, the GP available, and the internal and external payout.
 - **Settings:** contract term, escalation and payout rules are all editable, so it adapts to different contract structures.
 
-![Accounts to roll](media/accounts.png)
-![Roll calculator](media/calculator.png)
+![Accounts to roll](media/Accounts.png)
+![Roll calculator](media/Calculator.png)
 
 ## Privacy by design
 
