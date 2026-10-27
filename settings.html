@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Settings — Contract Roll Calculator</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar-root"></div>
+    <div class="main">
+      <div id="topbar-root"></div>
+      <div class="content settings-page">
+        <form id="settingsForm">
+          <section class="panel settings-card">
+            <h2>Defaults</h2>
+            <p class="hint">Used when a spreadsheet row leaves a field blank. New-deal service rates are in cents per page.</p>
+            <div class="settings-rows" id="defaultsFields"></div>
+          </section>
+
+          <section class="panel settings-card">
+            <h2>Contract rules</h2>
+            <p class="hint">Payout and escalation rules applied across Accounts and the calculator.</p>
+            <div class="settings-rows" id="rulesFields"></div>
+          </section>
+
+          <div class="actions settings-actions">
+            <button type="submit" class="primary">Save settings</button>
+            <button type="button" class="secondary" id="resetDefaults">Reset settings to defaults</button>
+          </div>
+        </form>
+
+        <section class="panel settings-card settings-danger">
+          <h2>Clear all data</h2>
+          <p class="hint">Removes every saved deal list and all settings from this browser, then restores factory defaults. You will need to upload your spreadsheet again on Data.</p>
+          <div class="actions">
+            <button type="button" class="secondary" id="clearAll">Clear all data</button>
+          </div>
+          <p class="hint" id="clearStatus" style="margin-top:0.75rem;margin-bottom:0"></p>
+        </section>
+
+        <p class="footer-note">Settings stay on this computer only</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="pm-calc.js"></script>
+  <script src="settings.js"></script>
+  <script src="sheet-store.js"></script>
+  <script src="shell.js"></script>
+  <script>
+(function () {
+  "use strict";
+  var S = window.AppSettings;
+  var labels = S.fieldLabels();
+  var defaultsOrder = [
+    "factorRate", "myCog", "competitorCog",
+    "newBwSvcCents", "newColourSvcCents"
+  ];
+  var rulesOrder = [
+    "contractTermMonths", "escalationPercent", "escalationEveryMonths",
+    "earlyTerminationExtraMonths", "rollSoonWindowMonths"
+  ];
+  var steps = {
+    factorRate: "any", myCog: "0.01", competitorCog: "0.01",
+    newBwSvcCents: "any", newColourSvcCents: "any",
+    contractTermMonths: "1", escalationPercent: "any", escalationEveryMonths: "1",
+    earlyTerminationExtraMonths: "1", rollSoonWindowMonths: "1"
+  };
+  var shortLabels = {
+    factorRate: "Factor rate",
+    myCog: "My COG ($)",
+    competitorCog: "Competitor COG ($)",
+    newBwSvcCents: "New-deal B/W service (¢)",
+    newColourSvcCents: "New-deal colour service (¢)",
+    contractTermMonths: "Contract term (months)",
+    escalationPercent: "Escalation percent",
+    escalationEveryMonths: "Escalation every N months",
+    earlyTerminationExtraMonths: "Extra months on competitor payout",
+    rollSoonWindowMonths: "Roll soon window (months)"
+  };
+
+  AppShell.init({
+    active: "settings",
+    title: "Settings",
+    description: "Default numbers and payout rules used across the app. Saved in this browser only."
+  });
+
+  function rowHtml(k, values) {
+    return '<div class="settings-row">' +
+      '<div class="settings-label">' +
+      '<label for="' + k + '">' + (shortLabels[k] || labels[k]) + "</label>" +
+      '<span class="settings-help">' + labels[k] + "</span>" +
+      "</div>" +
+      '<div class="settings-control">' +
+      '<input id="' + k + '" name="' + k + '" type="number" step="' + (steps[k] || "any") +
+      '" value="' + values[k] + '" required />' +
+      "</div></div>";
+  }
+
+  function renderForm(values) {
+    document.getElementById("defaultsFields").innerHTML = defaultsOrder.map(function (k) {
+      return rowHtml(k, values);
+    }).join("");
+    document.getElementById("rulesFields").innerHTML = rulesOrder.map(function (k) {
+      return rowHtml(k, values);
+    }).join("");
+  }
+
+  function readForm() {
+    var o = {};
+    defaultsOrder.concat(rulesOrder).forEach(function (k) {
+      o[k] = Number(document.getElementById(k).value);
+    });
+    return o;
+  }
+
+  function persist(message) {
+    S.save(readForm());
+    AppShell.toast(message || "Saved");
+  }
+
+  renderForm(S.load());
+
+  document.getElementById("settingsForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    persist("Saved");
+  });
+
+  document.getElementById("settingsForm").addEventListener("change", function (e) {
+    if (!e.target || e.target.tagName !== "INPUT") return;
+    persist("Saved");
+  });
+
+  document.getElementById("resetDefaults").addEventListener("click", function () {
+    if (!confirm("Reset all settings to the built-in defaults?")) return;
+    var d = S.resetToDefaults();
+    renderForm(d);
+    AppShell.toast("Saved");
+  });
+
+  document.getElementById("clearAll").addEventListener("click", function () {
+    if (!confirm("Clear all deals and settings from this browser? This cannot be undone.")) return;
+    S.clearAllData();
+    renderForm(S.load());
+    document.getElementById("clearStatus").textContent = "All app data cleared. Settings restored to defaults.";
+    AppShell.updateStatusCard();
+    AppShell.toast("Saved");
+  });
+})();
+  </script>
+</body>
+</html>

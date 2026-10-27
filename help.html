@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Help — Contract Roll Calculator</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar-root"></div>
+    <div class="main">
+      <div id="topbar-root"></div>
+      <div class="content help-page">
+        <div class="help-layout">
+          <nav class="panel help-toc" aria-label="Help sections">
+            <h2>Guides</h2>
+            <a href="#app" class="help-toc-link active" data-section="app">App guide</a>
+            <a href="#calculator" class="help-toc-link" data-section="calculator">Calculator guide</a>
+          </nav>
+
+          <article class="panel solid help-article" id="app">
+            <h1>How to use this app</h1>
+
+            <h2>Open in a real browser</h2>
+            <p>Double-click <code>index.html</code> (or open it in Chrome, Edge, or Safari). Upload may not work inside Cursor’s file preview — that is a browser limitation.</p>
+            <p>Keep the whole <code>docs</code> folder together (including <code>vendor/</code>) so fonts and the spreadsheet reader work offline.</p>
+
+            <h2>One spreadsheet for everything</h2>
+            <p>Open <strong>Data</strong> to choose a spreadsheet, load sample data, or clear everything. Upload once; the browser keeps a local copy for Dashboard, Accounts, and Calculator until you clear it.</p>
+            <p><strong>Clear all data</strong> (sidebar, Data, or Settings) wipes deals and settings from this browser.</p>
+            <ul>
+              <li>Dates may be month/year only (<code>10/2026</code>) — treated as the 1st of that month.</li>
+              <li>Copy/capital rates may be dollars per page (<code>0.005</code>) or cents (<code>0.5</code>) — auto-detected.</li>
+              <li>Volumes and money may include commas and <code>$</code>.</li>
+            </ul>
+
+            <h2>Settings</h2>
+            <p>Defaults used when a sheet row leaves a field blank, plus payout rules: factor rate, COGs, new-deal service rates, contract term, escalation, extra months on competitor payout, and the “Roll soon” window.</p>
+            <p><strong>Reset settings to defaults</strong> restores factory numbers without clearing deals. <strong>Clear all data</strong> clears everything.</p>
+
+            <h2>Dashboard</h2>
+            <p>Date filters, overview totals, month-over-month, year-over-year, deal types, and a roll pipeline that links into Accounts.</p>
+
+            <h2>Accounts to roll</h2>
+            <p>Runs the correct engine per deal type. Needs-review rows for bad type flags. Filter by Roll now, Roll soon, Build relationship, or All. Click a row to open the calculator.</p>
+
+            <h2>Roll calculator</h2>
+            <p>Select a customer or enter figures manually. Choose Print Management, Print Advantage, or Rental. See the <a href="#calculator">Calculator guide</a> for type rules.</p>
+          </article>
+
+          <article class="panel solid help-article" id="calculator" hidden>
+            <h1>Roll calculator — three agreement types</h1>
+            <p>Term length, escalation %, and the extra months on competitor payout are editable under <strong>Settings</strong> (defaults below).</p>
+
+            <h2>Print Management</h2>
+            <ul>
+              <li>Capital in click rates (Rental Capital B/W / Colour) + copy costs.</li>
+              <li>Escalation every 6 months from start: 6% on the whole total; extra dollars onto service; capital fixed.</li>
+              <li>Overs (lifetime extras) × capital rates reduce <strong>internal</strong> payout only. Example: 1000 colour × 9.8¢ = $98.00.</li>
+              <li>Internal = capital monthly × remaining − overs credit.</li>
+              <li>External = current total × (remaining + 1).</li>
+            </ul>
+
+            <h2>Print Advantage</h2>
+            <ul>
+              <li>Fixed rental + copy costs (e.g. $100.00 + 1000 B/W @ 0.5¢ + 1000 colour @ 5¢ = $55.00 service → $155.00 total).</li>
+              <li>Escalation every 6 months from start: 6% on service only. First uplift: $55.00 × 1.06 = $58.30 → total $158.30 (rental stays $100.00).</li>
+              <li>Overs do not reduce internal payout.</li>
+              <li>Internal = fixed rental × remaining. External = current total × (remaining + 1).</li>
+            </ul>
+
+            <h2>Rental</h2>
+            <ul>
+              <li>Monthly minimum = fixed rental only. No included volume in the minimum.</li>
+              <li>Copy costs on the sheet are pay-as-you-go and not part of buyout minimum.</li>
+              <li>No service escalation on the minimum.</li>
+              <li>Internal = rental × remaining. External = rental × (remaining + 1).</li>
+              <li>Risk compares competitor replica to rental only (base service floor = 0).</li>
+            </ul>
+
+            <h2>Shared for all types</h2>
+            <ul>
+              <li>Factor rate, My COG, Competitor COG.</li>
+              <li>Latest safe roll month = last month before competitor replica monthly ≤ current minimum.</li>
+              <li>GP = max principal from monthly room − internal payout − My COG.</li>
+            </ul>
+
+            <h2>Customer quick-select</h2>
+            <p>Populate from the shared spreadsheet (Customer column recommended). Selecting a row sets type and fields; you can still edit afterwards.</p>
+          </article>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="settings.js"></script>
+  <script src="sheet-store.js"></script>
+  <script src="shell.js"></script>
+  <script>
+(function () {
+  "use strict";
+  AppShell.init({
+    active: "help",
+    title: "Help",
+    description: "How to use the app and how the three agreement types work."
+  });
+
+  function showSection(name) {
+    var app = document.getElementById("app");
+    var calc = document.getElementById("calculator");
+    var isCalc = name === "calculator";
+    app.hidden = isCalc;
+    calc.hidden = !isCalc;
+    document.querySelectorAll(".help-toc-link").forEach(function (a) {
+      a.classList.toggle("active", a.getAttribute("data-section") === (isCalc ? "calculator" : "app"));
+    });
+  }
+
+  document.querySelectorAll(".help-toc-link").forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+      var sec = a.getAttribute("data-section");
+      showSection(sec);
+      if (history.replaceState) history.replaceState(null, "", "#" + sec);
+      else location.hash = sec;
+    });
+  });
+
+  var hash = (location.hash || "#app").replace(/^#/, "");
+  if (hash === "calculator" || hash === "calc") showSection("calculator");
+  else showSection("app");
+})();
+  </script>
+</body>
+</html>

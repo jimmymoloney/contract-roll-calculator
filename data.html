@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data — Contract Roll Calculator</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar-root"></div>
+    <div class="main">
+      <div id="topbar-root"></div>
+      <div class="content">
+        <section class="panel data-sample-cta" id="dataSampleCta">
+          <h2>New here? Load sample data</h2>
+          <p class="hint">Explore the demo with fictional customers — Acme Legal and friends. One click fills Dashboard, Accounts, and Calculator. Your files never leave this browser.</p>
+          <div class="actions">
+            <button type="button" class="primary empty-cta" id="loadSample">Load sample data</button>
+            <a class="btn secondary" href="sample/sample-deals.csv" download>Download sample CSV</a>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Upload spreadsheet</h2>
+          <p class="hint">Excel (.xlsx) or CSV. One row per deal. Exactly one deal-type column should be Yes.</p>
+
+          <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Choose or drop spreadsheet">
+            <p class="dz-title">Drop a file here</p>
+            <p>or click to choose a spreadsheet</p>
+            <p class="file-name" id="fileNameLabel" style="margin-top:1rem">No file chosen</p>
+          </div>
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,text/csv" />
+
+          <div class="actions">
+            <button type="button" class="primary" id="chooseFileBtn">Choose spreadsheet</button>
+            <button type="button" class="secondary" id="clearData">Clear all data</button>
+          </div>
+          <div class="upload-error" id="uploadError" role="alert"></div>
+          <p class="hint" id="fileStatus" style="margin-top:0.85rem;margin-bottom:0">No file loaded yet.</p>
+        </section>
+
+        <section class="panel">
+          <details>
+            <summary style="cursor:pointer;font-weight:700;font-size:1.05rem;color:#fff">Spreadsheet format</summary>
+            <div style="margin-top:1rem">
+              <p class="hint">Column names are flexible (capitals ignored).</p>
+              <ul class="cols-list">
+                <li><code>Customer</code> (recommended — for quick-select)</li>
+                <li><code>Date of Deal Won</code>, <code>New Devices</code>, <code>Revenue</code>, <code>GP</code></li>
+                <li><code>Fixed Rental</code>, <code>B/W Included</code>, <code>Copy Cost B/W</code>, <code>Rental Capital B/W</code></li>
+                <li><code>Colour Included</code>, <code>Copy Cost Colour</code>, <code>Rental Capital Colour</code></li>
+                <li><code>Minimum monthly Commitment</code>, <code>Total Customer Commitment</code>, <code>New Business</code></li>
+                <li><code>Deal Print Management?</code>, <code>Deal Print Advantage?</code>, <code>Deal Rental?</code></li>
+                <li>Optional: overs, Factor, My COG, Competitor COG</li>
+              </ul>
+              <p class="hint" style="margin-top:0.85rem;margin-bottom:0">
+                Dates may be month/year only (<code>10/2026</code>).
+                Copy/capital rates may be dollars per page (<code>0.005</code>) or cents (<code>0.5</code>).
+                Volumes and money may include commas and <code>$</code>.
+              </p>
+            </div>
+          </details>
+        </section>
+
+        <p class="footer-note">Files stay on this computer · Shared with Dashboard, Accounts, and Calculator</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="pm-calc.js"></script>
+  <script src="settings.js"></script>
+  <script src="sheet-store.js"></script>
+  <script src="sample-data.js"></script>
+  <script src="shell.js"></script>
+  <script>
+(function () {
+  "use strict";
+
+  AppShell.init({
+    active: "data",
+    title: "Data",
+    description: "Upload or replace the sales spreadsheet used across the whole app."
+  });
+
+  function showError(msg) {
+    var el = document.getElementById("uploadError");
+    el.textContent = msg || "";
+    el.classList.toggle("visible", !!msg);
+  }
+
+  function setSampleCtaVisible(show) {
+    var el = document.getElementById("dataSampleCta");
+    if (el) el.hidden = !show;
+  }
+
+  function ingest(parsed, fileName) {
+    showError("");
+    SheetStore.save({ rows: parsed.rows, newBizMode: parsed.newBizMode, fileName: fileName });
+    document.getElementById("fileNameLabel").textContent = fileName || "No file chosen";
+    document.getElementById("fileStatus").textContent =
+      "Loaded “" + fileName + "” — " + parsed.rows.length + " deals saved for all pages.";
+    setSampleCtaVisible(false);
+    AppShell.updateStatusCard();
+  }
+
+  function readFile(file) {
+    if (!file) return;
+    document.getElementById("fileNameLabel").textContent = file.name;
+    showError("");
+    var reader = new FileReader();
+    reader.onerror = function () {
+      showError("Could not read that file from disk.");
+    };
+    reader.onload = function (ev) {
+      try { ingest(SheetStore.parseFileArrayBuffer(ev.target.result), file.name); }
+      catch (err) { showError("Could not read that file: " + err.message); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function restoreStatus() {
+    var data = SheetStore.load();
+    if (data && data.rows && data.rows.length) {
+      document.getElementById("fileNameLabel").textContent = data.fileName || "Saved deals";
+      document.getElementById("fileStatus").textContent =
+        "Using saved “" + (data.fileName || "deals") + "” — " + data.rows.length + " deals.";
+      setSampleCtaVisible(false);
+    } else {
+      setSampleCtaVisible(true);
+    }
+    AppShell.updateStatusCard();
+  }
+
+  var dz = document.getElementById("dropzone");
+  var input = document.getElementById("fileInput");
+
+  document.getElementById("chooseFileBtn").addEventListener("click", function () { input.click(); });
+  dz.addEventListener("click", function () { input.click(); });
+  dz.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); }
+  });
+
+  ["dragenter", "dragover"].forEach(function (evt) {
+    dz.addEventListener(evt, function (e) {
+      e.preventDefault(); e.stopPropagation();
+      dz.classList.add("dragover");
+    });
+  });
+  ["dragleave", "drop"].forEach(function (evt) {
+    dz.addEventListener(evt, function (e) {
+      e.preventDefault(); e.stopPropagation();
+      dz.classList.remove("dragover");
+    });
+  });
+  dz.addEventListener("drop", function (e) {
+    var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    readFile(file);
+  });
+
+  input.addEventListener("change", function (e) {
+    readFile(e.target.files && e.target.files[0]);
+  });
+
+  document.getElementById("loadSample").addEventListener("click", function () {
+    showError("");
+    try {
+      ingest(SheetStore.loadSampleData(), "sample-deals.csv (built-in)");
+    } catch (err) {
+      showError(err.message);
+    }
+  });
+
+  document.getElementById("clearData").addEventListener("click", function () {
+    if (!confirm("Clear all deals and settings from this browser? This cannot be undone.")) return;
+    AppSettings.clearAllData();
+    document.getElementById("fileNameLabel").textContent = "No file chosen";
+    document.getElementById("fileStatus").textContent = "All app data cleared.";
+    showError("");
+    setSampleCtaVisible(true);
+    AppShell.updateStatusCard();
+  });
+
+  if (typeof XLSX === "undefined") {
+    showError("Spreadsheet library did not load. Keep the vendor folder next to these pages.");
+  }
+  restoreStatus();
+})();
+  </script>
+</body>
+</html>

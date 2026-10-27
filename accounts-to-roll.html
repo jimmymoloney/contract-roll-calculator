@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Accounts to roll — Contract Roll Calculator</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar-root"></div>
+    <div class="main">
+      <div id="topbar-root"></div>
+      <div class="content">
+        <div id="emptyState" class="panel empty-state" hidden>
+          <h2>Try the demo</h2>
+          <p>Load fictional sample deals to see roll-now / roll-soon priorities, or upload a spreadsheet on Data. Data stays in this browser only.</p>
+          <div class="actions">
+            <button type="button" class="primary empty-cta" id="emptyLoadSample">Load sample data</button>
+            <a class="btn secondary" href="data.html">Upload spreadsheet</a>
+          </div>
+        </div>
+
+        <div id="accountsContent" class="accounts-page" hidden>
+          <div class="accounts-toolbar panel">
+            <div class="seg-control" role="tablist" aria-label="Priority filter">
+              <button type="button" class="seg-btn" role="tab" data-tab="now" id="tabNow">Roll now <span class="seg-count" id="countNow">0</span></button>
+              <button type="button" class="seg-btn" role="tab" data-tab="soon" id="tabSoon">Roll soon <span class="seg-count" id="countSoon">0</span></button>
+              <button type="button" class="seg-btn" role="tab" data-tab="build" id="tabBuild">Build relationship <span class="seg-count" id="countBuild">0</span></button>
+              <button type="button" class="seg-btn active" role="tab" data-tab="all" id="tabAll" aria-selected="true">All <span class="seg-count" id="countAll">0</span></button>
+            </div>
+            <div class="accounts-toolbar-right">
+              <label class="acct-search">
+                <span class="sr-only">Search accounts</span>
+                <input type="search" id="searchBox" placeholder="Search account name" autocomplete="off" />
+              </label>
+              <label class="acct-soon">
+                <span>Roll soon window (months)</span>
+                <input type="number" id="soonWindow" min="1" max="24" value="6" />
+              </label>
+            </div>
+          </div>
+
+          <div id="reviewAlert" class="review-alert" hidden>
+            <button type="button" class="review-alert-bar" id="reviewToggle" aria-expanded="false">
+              <span id="reviewSummary">0 rows need review</span>
+              <span class="review-action" id="reviewAction">View</span>
+            </button>
+            <div id="reviewBody" class="review-body" hidden>
+              <p class="hint">These rows do not have exactly one deal-type flag. Fix the sheet and re-upload on Data.</p>
+              <div class="table-wrap" style="max-height:220px">
+                <table class="data" id="invalidTable">
+                  <thead>
+                    <tr>
+                      <th class="text-left">Customer / deal</th>
+                      <th class="text-left">Issue</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <section class="panel solid accounts-table-panel">
+            <div class="table-wrap accounts-table-wrap">
+              <table class="data accounts-table" id="accountsTable">
+                <thead>
+                  <tr>
+                    <th class="text-left sortable" data-sort="account" scope="col"><button type="button" class="th-sort">Account</button></th>
+                    <th class="text-left sortable" data-sort="type" scope="col"><button type="button" class="th-sort">Type</button></th>
+                    <th class="sortable" data-sort="elapsed" scope="col"><button type="button" class="th-sort">Elapsed</button></th>
+                    <th class="sortable" data-sort="safe" scope="col"><button type="button" class="th-sort">Latest safe</button></th>
+                    <th class="sortable" data-sort="until" scope="col"><button type="button" class="th-sort">Until risk</button></th>
+                    <th class="sortable" data-sort="internal" scope="col"><button type="button" class="th-sort">Internal now</button></th>
+                    <th class="sortable" data-sort="external" scope="col"><button type="button" class="th-sort">External (+1)</button></th>
+                    <th class="sortable" data-sort="gp" scope="col"><button type="button" class="th-sort">GP now</button></th>
+                    <th class="text-left sortable" data-sort="priority" scope="col"><button type="button" class="th-sort">Priority</button></th>
+                  </tr>
+                </thead>
+                <tbody id="accountsBody"></tbody>
+              </table>
+            </div>
+            <p class="accounts-footnote" id="tableEmpty" hidden>No accounts match this filter.</p>
+            <p class="accounts-footnote">Valid deals only. External payout includes +1 month. Overs only cut internal on Print Management.</p>
+          </section>
+        </div>
+
+        <p class="footer-note">Uses the shared spreadsheet from Data</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="pm-calc.js"></script>
+  <script src="settings.js"></script>
+  <script src="sheet-store.js"></script>
+  <script src="sample-data.js"></script>
+  <script src="shell.js"></script>
+  <script>
+(function () {
+  "use strict";
+  var C = window.PMCalc;
+  var deals = [];
+  var analysed = [];
+  var activeTab = "all";
+  var sortKey = "until";
+  var sortDir = 1; // 1 asc, -1 desc
+  var TYPE_ORDER = { printManagement: 0, printAdvantage: 1, rental: 2 };
+  var BUCKET_ORDER = { now: 0, soon: 1, build: 2 };
+
+  AppShell.init({
+    active: "accounts",
+    title: "Accounts to roll",
+    description: "Which deals to roll now, soon, or later — using the shared spreadsheet."
+  });
+
+  function parseBucketParam() {
+    try {
+      var raw = (new URLSearchParams(window.location.search).get("bucket") || "").toLowerCase();
+      if (raw === "now" || raw === "roll-now" || raw === "roll_now") return "now";
+      if (raw === "soon" || raw === "roll-soon" || raw === "roll_soon") return "soon";
+      if (raw === "build" || raw === "build-relationship" || raw === "build_relationship") return "build";
+      if (raw === "all") return "all";
+    } catch (e) { /* ignore */ }
+    return null;
+  }
+
+  function typeBadge(type) {
+    if (type === "printAdvantage") return '<span class="type-badge pa">Print Advantage</span>';
+    if (type === "rental") return '<span class="type-badge rent">Rental</span>';
+    return '<span class="type-badge">Print Management</span>';
+  }
+
+  function pill(bucket) {
+    if (bucket === "now") return '<span class="pill now">ROLL NOW</span>';
+    if (bucket === "soon") return '<span class="pill soon">ROLL SOON</span>';
+    return '<span class="pill build">BUILD RELATIONSHIP</span>';
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
+    });
+  }
+
+  function formatUntil(snap) {
+    if (snap.monthsUntilRisk == null) return "—";
+    if (snap.monthsUntilRisk < 0) return "Past (" + Math.abs(snap.monthsUntilRisk) + " mo)";
+    if (snap.monthsUntilRisk === 0) return "This month";
+    return snap.monthsUntilRisk + " mo";
+  }
+
+  function untilSortValue(snap) {
+    if (snap.monthsUntilRisk == null) return 9999;
+    return snap.monthsUntilRisk;
+  }
+
+  function analyse(list, soonWindow) {
+    return list.filter(function (d) { return d.typeValid; }).map(function (row) {
+      var inp = SheetStore.toCalcInput(row);
+      var snap = C.snapshotAt(inp, row.elapsed);
+      var bucket = C.priorityBucket(snap, soonWindow);
+      return {
+        row: row,
+        snap: snap,
+        bucket: bucket,
+        calcUrl: "roll-calculator.html?" + C.toQuery(inp) + "&dealId=" + encodeURIComponent(row.id)
+      };
+    });
+  }
+
+  function showEmpty(empty) {
+    AppShell.setEmptyState(empty, "accountsContent");
+  }
+
+  function setTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll(".seg-btn").forEach(function (btn) {
+      var on = btn.getAttribute("data-tab") === tab;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    paintTable();
+  }
+
+  function searchQuery() {
+    return (document.getElementById("searchBox").value || "").trim().toLowerCase();
+  }
+
+  function filteredRows() {
+    var q = searchQuery();
+    return analysed.filter(function (r) {
+      if (activeTab !== "all" && r.bucket !== activeTab) return false;
+      if (q && String(r.row.displayName || "").toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+  }
+
+  function sortRows(rows) {
+    var key = sortKey;
+    var dir = sortDir;
+    return rows.slice().sort(function (a, b) {
+      var av, bv;
+      switch (key) {
+        case "account":
+          av = String(a.row.displayName || "").toLowerCase();
+          bv = String(b.row.displayName || "").toLowerCase();
+          return av < bv ? -dir : av > bv ? dir : 0;
+        case "type":
+          av = TYPE_ORDER[a.row.dealType] != null ? TYPE_ORDER[a.row.dealType] : 9;
+          bv = TYPE_ORDER[b.row.dealType] != null ? TYPE_ORDER[b.row.dealType] : 9;
+          return (av - bv) * dir;
+        case "elapsed":
+          return (a.snap.month - b.snap.month) * dir;
+        case "safe":
+          av = a.snap.lastSafeMonth != null ? a.snap.lastSafeMonth : -1;
+          bv = b.snap.lastSafeMonth != null ? b.snap.lastSafeMonth : -1;
+          return (av - bv) * dir;
+        case "until":
+          return (untilSortValue(a.snap) - untilSortValue(b.snap)) * dir;
+        case "internal":
+          return (a.snap.row.intPayout - b.snap.row.intPayout) * dir;
+        case "external":
+          return (a.snap.row.extPayout - b.snap.row.extPayout) * dir;
+        case "gp":
+          return (a.snap.row.gp - b.snap.row.gp) * dir;
+        case "priority":
+          return ((BUCKET_ORDER[a.bucket] || 0) - (BUCKET_ORDER[b.bucket] || 0)) * dir;
+        default:
+          return 0;
+      }
+    });
+  }
+
+  function updateSortHeaders() {
+    document.querySelectorAll("#accountsTable th.sortable").forEach(function (th) {
+      var k = th.getAttribute("data-sort");
+      th.classList.toggle("sorted", k === sortKey);
+      th.classList.toggle("desc", k === sortKey && sortDir < 0);
+      th.classList.toggle("asc", k === sortKey && sortDir > 0);
+    });
+  }
+
+  function paintCounts() {
+    var counts = { now: 0, soon: 0, build: 0 };
+    analysed.forEach(function (r) { counts[r.bucket]++; });
+    document.getElementById("countNow").textContent = String(counts.now);
+    document.getElementById("countSoon").textContent = String(counts.soon);
+    document.getElementById("countBuild").textContent = String(counts.build);
+    document.getElementById("countAll").textContent = String(analysed.length);
+  }
+
+  function paintReview() {
+    var invalid = deals.filter(function (d) { return !d.typeValid; });
+    var alert = document.getElementById("reviewAlert");
+    if (!invalid.length) {
+      alert.hidden = true;
+      document.getElementById("reviewBody").hidden = true;
+      document.getElementById("reviewToggle").setAttribute("aria-expanded", "false");
+      document.getElementById("reviewAction").textContent = "View";
+      return;
+    }
+    alert.hidden = false;
+    var n = invalid.length;
+    document.getElementById("reviewSummary").textContent =
+      n + (n === 1 ? " row needs review" : " rows need review");
+    document.querySelector("#invalidTable tbody").innerHTML = invalid.map(function (d) {
+      return "<tr><td class=\"text-left\">" + escapeHtml(d.displayName) + "</td>" +
+        "<td class=\"text-left\">" + escapeHtml(d.typeIssue || "Invalid type") + "</td>" +
+        "<td>" + (d.dateYmd || "") + "</td></tr>";
+    }).join("");
+  }
+
+  function paintTable() {
+    var rows = sortRows(filteredRows());
+    var tbody = document.getElementById("accountsBody");
+    var empty = document.getElementById("tableEmpty");
+    updateSortHeaders();
+    empty.hidden = rows.length > 0;
+    tbody.innerHTML = rows.map(function (r, i) {
+      var gp = r.snap.row.gp;
+      return '<tr class="acct-row" tabindex="0" data-url="' + escapeHtml(r.calcUrl) + '">' +
+        '<td class="text-left">' + escapeHtml(r.row.displayName) + "</td>" +
+        '<td class="text-left">' + typeBadge(r.row.dealType) + "</td>" +
+        "<td>" + r.snap.month + "</td>" +
+        "<td>" + (r.snap.lastSafeMonth != null ? r.snap.lastSafeMonth : "—") + "</td>" +
+        "<td>" + formatUntil(r.snap) + "</td>" +
+        "<td>" + AppShell.formatMoney(r.snap.row.intPayout) + "</td>" +
+        "<td>" + AppShell.formatMoney(r.snap.row.extPayout) + "</td>" +
+        '<td class="' + (gp < 0 ? "neg" : "pos") + '">' + AppShell.formatMoney(gp) + "</td>" +
+        '<td class="text-left">' + pill(r.bucket) + "</td>" +
+        "</tr>";
+    }).join("");
+  }
+
+  function recompute() {
+    var soon = Number(document.getElementById("soonWindow").value) || 6;
+    analysed = analyse(deals, soon);
+    paintCounts();
+    paintReview();
+    paintTable();
+  }
+
+  function restore() {
+    var data = SheetStore.load();
+    if (!data || !data.rows.length) {
+      showEmpty(true);
+      AppShell.updateStatusCard();
+      return;
+    }
+    deals = data.rows;
+    showEmpty(false);
+    var fromQ = parseBucketParam();
+    if (fromQ) setTab(fromQ);
+    else setTab(activeTab);
+    recompute();
+    AppShell.updateStatusCard();
+  }
+
+  document.getElementById("emptyLoadSample").addEventListener("click", function () {
+    try {
+      var parsed = SheetStore.loadSampleData();
+      SheetStore.save({ rows: parsed.rows, newBizMode: parsed.newBizMode, fileName: "sample-deals.csv (built-in)" });
+      restore();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+
+  document.querySelectorAll(".seg-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      setTab(btn.getAttribute("data-tab"));
+    });
+  });
+
+  document.getElementById("searchBox").addEventListener("input", paintTable);
+
+  document.getElementById("soonWindow").addEventListener("input", recompute);
+  document.getElementById("soonWindow").addEventListener("change", recompute);
+
+  document.getElementById("reviewToggle").addEventListener("click", function () {
+    var body = document.getElementById("reviewBody");
+    var open = body.hidden;
+    body.hidden = !open;
+    document.getElementById("reviewToggle").setAttribute("aria-expanded", open ? "true" : "false");
+    document.getElementById("reviewAction").textContent = open ? "Hide" : "View";
+  });
+
+  document.querySelectorAll("#accountsTable th.sortable").forEach(function (th) {
+    th.querySelector(".th-sort").addEventListener("click", function (e) {
+      e.stopPropagation();
+      var key = th.getAttribute("data-sort");
+      if (sortKey === key) sortDir = -sortDir;
+      else { sortKey = key; sortDir = key === "account" || key === "type" || key === "priority" ? 1 : 1; }
+      // default first click: until/gp numeric asc is fine; account alpha asc
+      paintTable();
+    });
+  });
+
+  document.getElementById("accountsBody").addEventListener("click", function (e) {
+    var tr = e.target.closest("tr.acct-row");
+    if (!tr) return;
+    var url = tr.getAttribute("data-url");
+    if (url) window.location.href = url;
+  });
+
+  document.getElementById("accountsBody").addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var tr = e.target.closest("tr.acct-row");
+    if (!tr) return;
+    var url = tr.getAttribute("data-url");
+    if (url) window.location.href = url;
+  });
+
+  if (window.AppSettings) {
+    document.getElementById("soonWindow").value = String(AppSettings.load().rollSoonWindowMonths);
+  }
+
+  var initialBucket = parseBucketParam();
+  if (initialBucket) activeTab = initialBucket;
+
+  restore();
+})();
+  </script>
+</body>
+</html>

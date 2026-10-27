@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Roll calculator — Contract Roll Calculator</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar-root"></div>
+    <div class="main">
+      <div id="topbar-root"></div>
+      <div class="content calc-page">
+        <div class="calc-columns">
+          <div class="calc-left">
+            <section class="panel calc-top-card">
+              <h2>Customer &amp; agreement</h2>
+              <p class="hint" id="sheetStatus">No shared data — upload on the Data page or load sample there.</p>
+              <div class="field">
+                <label for="customerSelect">Customer</label>
+                <select id="customerSelect">
+                  <option value="">— Manual entry / no selection —</option>
+                </select>
+              </div>
+              <p class="hint calc-manual-hint">Or enter figures manually below. <a href="data.html">Open Data</a> to upload or replace the sheet.</p>
+
+              <div class="type-tabs calc-type-seg" role="tablist" aria-label="Agreement type">
+                <button type="button" class="active" data-type="printManagement" id="tabPM">Print Management</button>
+                <button type="button" data-type="printAdvantage" id="tabPA">Print Advantage</button>
+                <button type="button" data-type="rental" id="tabRent">Rental</button>
+              </div>
+              <div class="calc-type-info" id="typeHelp"></div>
+            </section>
+
+            <form id="calc-form" autocomplete="off">
+              <details class="panel calc-card" open>
+                <summary>Contract</summary>
+                <div class="grid calc-grid">
+                  <div class="field">
+                    <label for="factor">Factor rate</label>
+                    <input id="factor" type="number" min="0.01" step="any" value="2" required />
+                  </div>
+                  <div class="field">
+                    <label for="startDate">Contract start date</label>
+                    <input id="startDate" type="date" />
+                  </div>
+                  <div class="field">
+                    <label for="elapsed">Months already elapsed</label>
+                    <input id="elapsed" type="number" min="0" max="60" step="1" value="0" />
+                  </div>
+                    <div class="field">
+                    <label for="myCog">My COG</label>
+                    <div class="input-affix"><span class="affix prefix">$</span><input id="myCog" type="number" step="0.01" value="5000" required /></div>
+                  </div>
+                  <div class="field">
+                    <label for="compCog">Competitor COG</label>
+                    <div class="input-affix"><span class="affix prefix">$</span><input id="compCog" type="number" step="0.01" value="5000" required /></div>
+                  </div>
+                </div>
+              </details>
+
+              <div id="blockFixedRental" class="hidden-block">
+                <details class="panel calc-card" open>
+                  <summary>Fixed rental</summary>
+                  <div class="grid calc-grid">
+                    <div class="field">
+                      <label for="fixedRental">Fixed rental / month</label>
+                      <div class="input-affix"><span class="affix prefix">$</span><input id="fixedRental" type="number" min="0" step="0.01" value="0" /></div>
+                    </div>
+                  </div>
+                </details>
+              </div>
+
+              <div id="blockVolumes">
+                <details class="panel calc-card" open>
+                  <summary>Included volumes</summary>
+                  <div class="grid calc-grid">
+                    <div class="field">
+                      <label for="bwVol">B/W included</label>
+                      <input id="bwVol" type="number" min="0" step="1" value="0" />
+                    </div>
+                    <div class="field">
+                      <label for="colourVol">Colour included</label>
+                      <input id="colourVol" type="number" min="0" step="1" value="0" />
+                    </div>
+                  </div>
+                </details>
+              </div>
+
+              <div id="blockCapital">
+                <details class="panel calc-card" open>
+                  <summary>Rental capital (¢ per page)</summary>
+                  <div class="grid calc-grid">
+                    <div class="field">
+                      <label for="bwCap">Rental capital B/W</label>
+                      <div class="input-affix"><input id="bwCap" type="number" min="0" step="any" value="0" /><span class="affix suffix">¢</span></div>
+                    </div>
+                    <div class="field">
+                      <label for="colourCap">Rental capital colour</label>
+                      <div class="input-affix"><input id="colourCap" type="number" min="0" step="any" value="0" /><span class="affix suffix">¢</span></div>
+                    </div>
+                  </div>
+                </details>
+              </div>
+
+              <div id="blockCopy">
+                <details class="panel calc-card" open>
+                  <summary>Copy cost / service (¢ per page)</summary>
+                  <div class="grid calc-grid">
+                    <div class="field">
+                      <label for="bwSvc">Copy cost B/W</label>
+                      <div class="input-affix"><input id="bwSvc" type="number" min="0" step="any" value="0" /><span class="affix suffix">¢</span></div>
+                    </div>
+                    <div class="field">
+                      <label for="colourSvc">Copy cost colour</label>
+                      <div class="input-affix"><input id="colourSvc" type="number" min="0" step="any" value="0" /><span class="affix suffix">¢</span></div>
+                    </div>
+                  </div>
+                </details>
+              </div>
+
+              <div id="blockOvers">
+                <details class="panel calc-card" open>
+                  <summary>Overs (Print Management only)</summary>
+                  <div class="grid calc-grid">
+                    <div class="field">
+                      <label for="bwOvers">B/W overs (total pages)</label>
+                      <input id="bwOvers" type="number" min="0" step="1" value="0" />
+                    </div>
+                    <div class="field">
+                      <label for="colourOvers">Colour overs (total pages)</label>
+                      <span class="help">e.g. 1000 × 9.8¢ = $98 off internal</span>
+                      <input id="colourOvers" type="number" min="0" step="1" value="0" />
+                    </div>
+                    <div class="field">
+                      <label for="oversCreditLive">Overs credit (live)</label>
+                      <input id="oversCreditLive" type="text" readonly value="—" />
+                    </div>
+                  </div>
+                </details>
+              </div>
+
+              <div id="blockNewSvc">
+                <details class="panel calc-card" open>
+                  <summary>New-deal base service rates</summary>
+                  <div class="grid calc-grid">
+                    <div class="field">
+                      <label for="newBwSvc">New-deal B/W service</label>
+                      <div class="input-affix"><input id="newBwSvc" type="number" min="0" step="any" value="0.5" /><span class="affix suffix">¢</span></div>
+                    </div>
+                    <div class="field">
+                      <label for="newColourSvc">New-deal colour service</label>
+                      <div class="input-affix"><input id="newColourSvc" type="number" min="0" step="any" value="5" /><span class="affix suffix">¢</span></div>
+                    </div>
+                  </div>
+                </details>
+              </div>
+
+              <div class="derived calc-live-strip" aria-live="polite">
+                <div>
+                  <div class="d-lbl" id="capLabel">Capital / rental monthly</div>
+                  <div class="d-val" id="capMonthlyLive">—</div>
+                </div>
+                <div>
+                  <div class="d-lbl">Service monthly (start)</div>
+                  <div class="d-val" id="svcMonthlyLive">—</div>
+                </div>
+                <div>
+                  <div class="d-lbl">Total monthly (start)</div>
+                  <div class="d-val" id="totMonthlyLive">—</div>
+                </div>
+              </div>
+
+              <div class="actions calc-actions">
+                <button type="submit" class="primary calc-submit">Calculate</button>
+                <button type="button" class="secondary" id="loadExample">Load example</button>
+                <button type="button" class="secondary" id="resetForm">Clear</button>
+              </div>
+            </form>
+          </div>
+
+          <aside class="calc-right">
+            <div class="panel calc-results-sticky" id="resultsSticky">
+              <div id="resultsPlaceholder" class="calc-placeholder">
+                Enter figures and press Calculate
+              </div>
+
+              <div id="resultPanel" class="calc-verdict-wrap" hidden>
+                <div id="verdictBlock" class="calc-verdict safe">
+                  <div class="verdict-title" id="verdictTitle">Latest safe roll</div>
+                  <div class="verdict-sub" id="verdictSub">Risk from month —</div>
+                </div>
+                <p class="hint" id="ruleUsed" hidden></p>
+                <div class="calc-key-grid">
+                  <div class="metric"><div class="lbl">Your GP</div><div class="val accent" id="safeGpVal">—</div></div>
+                  <div class="metric"><div class="lbl">Internal payout</div><div class="val" id="safeIntVal">—</div></div>
+                  <div class="metric"><div class="lbl">External (+1 mo)</div><div class="val" id="safeExtVal">—</div></div>
+                  <div class="metric"><div class="lbl">First risk month</div><div class="val" id="riskMonthVal">—</div></div>
+                  <div class="metric"><div class="lbl">Overs credit</div><div class="val" id="safeOversVal">—</div></div>
+                  <div class="metric"><div class="lbl">Type</div><div class="val" id="typeVal">—</div></div>
+                </div>
+                <p class="calc-breakdown" id="summarySentence"></p>
+                <p class="calc-breakdown muted" id="vulnRuleNote"></p>
+                <p class="calc-results-foot">Ex GST · 60 months · +1 mo early termination</p>
+                <span id="safeMonthVal" class="sr-only">—</span>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <section class="panel solid calc-tabs-card" id="calcTabsCard" hidden>
+          <div class="calc-detail-tabs" role="tablist" aria-label="Result details">
+            <button type="button" class="calc-detail-tab active" data-tab="chart" role="tab" aria-selected="true">Competitor vs current</button>
+            <button type="button" class="calc-detail-tab" data-tab="rate" role="tab" aria-selected="false">New-deal rate</button>
+            <button type="button" class="calc-detail-tab" data-tab="month" role="tab" aria-selected="false">Month by month</button>
+          </div>
+
+          <div id="chartPanel" class="calc-tab-panel active" data-tab-panel="chart" role="tabpanel">
+            <h2 class="sr-only">Competitor replica vs current minimum</h2>
+            <div class="chart-wrap"><canvas id="chart" width="1000" height="240"></canvas></div>
+            <div class="legend">
+              <span class="rep">Competitor replica monthly</span>
+              <span class="min">Current total minimum</span>
+            </div>
+          </div>
+
+          <div id="ratePanel" class="calc-tab-panel" data-tab-panel="rate" role="tabpanel" hidden>
+            <h2 class="sr-only">New-deal rate chart</h2>
+            <div class="grid calc-grid" style="max-width:420px;margin-bottom:0.75rem">
+              <div class="field">
+                <label for="selectedMonth">Month to inspect</label>
+                <input id="selectedMonth" type="number" min="0" max="60" step="1" />
+              </div>
+              <div class="field" style="justify-content:flex-end">
+                <label>&nbsp;</label>
+                <button type="button" class="secondary" id="useSafeMonth">Use latest safe month</button>
+              </div>
+            </div>
+            <div class="table-wrap" style="max-height:none">
+              <table class="rate-table" id="rateTable"><tbody></tbody></table>
+            </div>
+          </div>
+
+          <div id="tablePanel" class="calc-tab-panel" data-tab-panel="month" role="tabpanel" hidden>
+            <h2 class="sr-only">Month-by-month</h2>
+            <p class="hint">External includes +1 month early termination. Latest safe month is highlighted.</p>
+            <div class="table-wrap calc-month-table">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th class="text-left">Month</th>
+                    <th>Left</th>
+                    <th>Total min</th>
+                    <th>Service</th>
+                    <th>Internal</th>
+                    <th>External (+1)</th>
+                    <th>Replica</th>
+                    <th>GP</th>
+                    <th class="text-left">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="pm-calc.js"></script>
+  <script src="settings.js"></script>
+  <script src="sheet-store.js"></script>
+  <script src="sample-data.js"></script>
+  <script src="shell.js"></script>
+  <script>
+(function () {
+  "use strict";
+  var C = window.PMCalc;
+  var dealType = C.TYPES.printManagement;
+  var deals = [];
+  var lastRows = null, lastInputs = null, lastSafeMonth = null, lastBuilt = null;
+
+  AppShell.init({
+    active: "calc",
+    title: "Roll calculator",
+    description: "Pick a customer from your shared spreadsheet, or enter figures manually."
+  });
+
+  var TYPE_HELP = {
+    printManagement:
+      "<strong>Print Management:</strong> Capital is built into click rates. Escalation = 6% on the <em>whole</em> monthly total every 6 months from start (extra dollars onto service). Overs reduce your internal payout. External = total × (remaining + 1).",
+    printAdvantage:
+      "<strong>Print Advantage:</strong> Fixed rental + copy costs. Escalation = 6% on the <em>service portion only</em> every 6 months (rental stays flat). Overs do <em>not</em> reduce internal payout. External = current total × (remaining + 1).",
+    rental:
+      "<strong>Rental:</strong> Minimum is fixed rental only. Click charges are pay-as-you-go and are <em>not</em> in the buyout minimum. No volume escalation. Internal = rental × remaining. External = rental × (remaining + 1)."
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  function setDetailTab(name) {
+    document.querySelectorAll(".calc-detail-tab").forEach(function (btn) {
+      var on = btn.getAttribute("data-tab") === name;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    document.querySelectorAll(".calc-tab-panel").forEach(function (panel) {
+      var on = panel.getAttribute("data-tab-panel") === name;
+      panel.classList.toggle("active", on);
+      panel.hidden = !on;
+    });
+    if (name === "chart" && lastRows && lastBuilt) {
+      renderChart(lastRows, C.findSafe(lastRows), lastInputs && lastInputs.elapsed);
+    }
+  }
+
+  function showResultsUI(show) {
+    $("resultsPlaceholder").hidden = !!show;
+    $("resultPanel").hidden = !show;
+    $("calcTabsCard").hidden = !show;
+    if (show) setDetailTab("chart");
+  }
+
+  function setType(t) {
+    dealType = t;
+    document.querySelectorAll(".type-tabs button").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-type") === t);
+    });
+    $("typeHelp").innerHTML = TYPE_HELP[t];
+    var isPM = t === "printManagement";
+    var isPA = t === "printAdvantage";
+    var isRent = t === "rental";
+    $("blockFixedRental").classList.toggle("hidden-block", isPM);
+    $("blockVolumes").classList.toggle("hidden-block", isRent);
+    $("blockCapital").classList.toggle("hidden-block", !isPM);
+    $("blockCopy").classList.toggle("hidden-block", isRent);
+    $("blockOvers").classList.toggle("hidden-block", !isPM);
+    $("blockNewSvc").classList.toggle("hidden-block", isRent);
+    $("capLabel").textContent = isPM ? "Capital monthly" : "Rental monthly";
+    updateLive();
+  }
+
+  function readInputs() {
+    return {
+      dealType: dealType,
+      fixedRental: Number($("fixedRental").value) || 0,
+      bwVol: Number($("bwVol").value) || 0,
+      colourVol: Number($("colourVol").value) || 0,
+      bwCapCents: Number($("bwCap").value) || 0,
+      colourCapCents: Number($("colourCap").value) || 0,
+      bwSvcCents: Number($("bwSvc").value) || 0,
+      colourSvcCents: Number($("colourSvc").value) || 0,
+      bwOvers: dealType === "printManagement" ? (Number($("bwOvers").value) || 0) : 0,
+      colourOvers: dealType === "printManagement" ? (Number($("colourOvers").value) || 0) : 0,
+      factor: Number($("factor").value) || 0,
+      myCog: Number($("myCog").value) || 0,
+      compCog: Number($("compCog").value) || 0,
+      newBwSvcCents: Number($("newBwSvc").value) || 0,
+      newColourSvcCents: Number($("newColourSvc").value) || 0,
+      startDate: $("startDate").value || null,
+      elapsed: $("elapsed").value === "" ? null : Number($("elapsed").value)
+    };
+  }
+
+  function updateLive() {
+    var inp = readInputs();
+    var d = C.derivedForType(inp);
+    var credit = C.oversCredit(inp, d);
+    $("capMonthlyLive").textContent = C.money(d.capitalMonthly);
+    $("svcMonthlyLive").textContent = C.money(d.serviceMonthly);
+    $("totMonthlyLive").textContent = C.money(d.totalMonthly);
+    $("oversCreditLive").value = dealType === "printManagement" ? C.money(credit) : "N/A";
+  }
+
+  function fillFromRow(row) {
+    if (!row.typeValid) {
+      alert("This deal needs review (deal type flags). Fix the sheet first.");
+      return;
+    }
+    setType(row.dealType);
+    $("fixedRental").value = row.fixedRental;
+    $("bwVol").value = row.bwVol;
+    $("colourVol").value = row.colourVol;
+    $("bwCap").value = row.bwCapCents;
+    $("colourCap").value = row.colourCapCents;
+    $("bwSvc").value = row.bwSvcCents;
+    $("colourSvc").value = row.colourSvcCents;
+    $("bwOvers").value = row.bwOvers || 0;
+    $("colourOvers").value = row.colourOvers || 0;
+    var defs = window.AppSettings ? AppSettings.load() : { factorRate: 2, myCog: 5000, competitorCog: 5000 };
+    $("factor").value = row.factor != null ? row.factor : defs.factorRate;
+    // Prefill both COGs from sheet Revenue − GP when both figures exist
+    var rev = Number(row.revenue);
+    var gp = Number(row.gp);
+    if (row.revenue != null && row.gp != null && isFinite(rev) && isFinite(gp)) {
+      var cogFromSheet = Math.round((rev - gp) * 100) / 100;
+      $("myCog").value = cogFromSheet;
+      $("compCog").value = cogFromSheet;
+    } else {
+      $("myCog").value = defs.myCog;
+      $("compCog").value = defs.competitorCog;
+    }
+    if (row.startDate) $("startDate").value = row.startDate;
+    $("elapsed").value = row.elapsed != null ? row.elapsed : 0;
+    updateLive();
+    $("calc-form").requestSubmit();
+  }
+
+  function populateSelect() {
+    var sel = $("customerSelect");
+    var current = sel.value;
+    sel.innerHTML = '<option value="">— Manual entry / no selection —</option>';
+    var valid = 0, invalid = 0;
+    deals.forEach(function (d, i) {
+      var opt = document.createElement("option");
+      opt.value = String(i);
+      if (!d.typeValid) {
+        opt.textContent = "⚠ " + d.displayName + " (" + (d.typeIssue || "invalid") + ")";
+        opt.disabled = true;
+        invalid++;
+      } else {
+        opt.textContent = d.displayName + " · " + C.TYPE_LABELS[d.dealType];
+        valid++;
+      }
+      sel.appendChild(opt);
+    });
+    if (current) sel.value = current;
+    $("sheetStatus").textContent = deals.length
+      ? "Shared sheet loaded — " + valid + " selectable, " + invalid + " need review."
+      : "No shared data — upload or load sample on the Data page.";
+  }
+
+  function restore() {
+    var data = SheetStore.load();
+    if (data && data.rows.length) {
+      deals = data.rows;
+      populateSelect();
+      $("sheetStatus").textContent =
+        "Using saved “" + (data.fileName || "deals") + "” — " + deals.length + " deals.";
+    }
+    AppShell.updateStatusCard();
+  }
+
+  document.querySelectorAll(".type-tabs button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      setType(b.getAttribute("data-type"));
+    });
+  });
+
+  document.querySelectorAll(".calc-detail-tab").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      setDetailTab(btn.getAttribute("data-tab"));
+    });
+  });
+
+  $("calc-form").addEventListener("input", updateLive);
+  $("customerSelect").addEventListener("change", function () {
+    var i = $("customerSelect").value;
+    if (i === "") return;
+    fillFromRow(deals[Number(i)]);
+  });
+
+  $("loadExample").addEventListener("click", function () {
+    if (dealType === "printManagement") {
+      $("bwVol").value = 3000; $("colourVol").value = 1000;
+      $("bwCap").value = 7.5; $("colourCap").value = 9.8;
+      $("bwSvc").value = 0.5; $("colourSvc").value = 5;
+      $("bwOvers").value = 0; $("colourOvers").value = 1000;
+      $("fixedRental").value = 0;
+    } else if (dealType === "printAdvantage") {
+      $("fixedRental").value = 100;
+      $("bwVol").value = 1000; $("colourVol").value = 1000;
+      $("bwCap").value = 0; $("colourCap").value = 0;
+      $("bwSvc").value = 0.5; $("colourSvc").value = 5;
+      $("bwOvers").value = 0; $("colourOvers").value = 0;
+    } else {
+      $("fixedRental").value = 388;
+      $("bwVol").value = 0; $("colourVol").value = 0;
+      $("bwCap").value = 0; $("colourCap").value = 0;
+      $("bwSvc").value = 0; $("colourSvc").value = 0;
+    }
+    applyDefaultFields(false);
+    $("elapsed").value = 0;
+    updateLive();
+    $("calc-form").requestSubmit();
+  });
+
+  $("resetForm").addEventListener("click", function () {
+    $("calc-form").reset();
+    applyDefaultFields(true);
+    $("elapsed").value = 0;
+    $("customerSelect").value = "";
+    showResultsUI(false);
+    updateLive();
+  });
+
+  $("calc-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    runCalc();
+  });
+
+  $("useSafeMonth").addEventListener("click", function () {
+    if (lastSafeMonth != null) {
+      $("selectedMonth").value = String(lastSafeMonth);
+      renderRateChart(lastSafeMonth);
+      highlightSelected(lastSafeMonth);
+    }
+  });
+  $("selectedMonth").addEventListener("change", function () {
+    var m = Math.max(0, Math.min(60, Math.round(Number($("selectedMonth").value) || 0)));
+    $("selectedMonth").value = String(m);
+    renderRateChart(m);
+    highlightSelected(m);
+  });
+
+  function runCalc() {
+    var inp = readInputs();
+    if (inp.factor <= 0) { alert("Enter a factor rate greater than zero."); return; }
+    var built = C.buildRows(inp);
+    var safe = C.findSafe(built.rows);
+    lastRows = built.rows;
+    lastInputs = inp;
+    lastBuilt = built;
+    lastSafeMonth = safe.lastSafe ? safe.lastSafe.month : null;
+    renderResult(safe, built, inp);
+    renderChart(built.rows, safe, inp.elapsed);
+    $("selectedMonth").value = String(lastSafeMonth != null ? lastSafeMonth : 0);
+    renderRateChart(Number($("selectedMonth").value));
+    renderTable(built.rows, safe, inp.elapsed, Number($("selectedMonth").value));
+    showResultsUI(true);
+  }
+
+  function renderResult(safe, built, inp) {
+    var lastSafe = safe.lastSafe, firstRisk = safe.firstRisk;
+    var elapsed = inp.elapsed == null ? 0 : Number(inp.elapsed);
+    $("typeVal").textContent = C.TYPE_LABELS[inp.dealType];
+    $("safeOversVal").textContent = inp.dealType === "printManagement" ? C.money(built.oversCredit) : "N/A";
+    $("ruleUsed").textContent =
+      "External includes +1 month early termination. " +
+      (inp.dealType === "printManagement"
+        ? "Overs reduce internal payout only."
+        : "Overs do not apply to this agreement type.");
+
+    var status = "safe";
+    if (!lastSafe) status = "past";
+    else if (firstRisk && elapsed >= firstRisk.month) status = "past";
+    else if (firstRisk && (firstRisk.month - elapsed) <= 6) status = "close";
+    else if (lastSafe && elapsed > lastSafe.month) status = "past";
+    $("verdictBlock").className = "calc-verdict " + status;
+
+    if (!lastSafe) {
+      $("verdictTitle").textContent = "No safe roll month";
+      $("verdictSub").textContent = firstRisk ? "Risk from month " + firstRisk.month : "Check COG and factor";
+      $("summarySentence").textContent = "Looks at risk from month 0 under these assumptions — check COG and factor.";
+      $("safeMonthVal").textContent = "None";
+      $("riskMonthVal").textContent = firstRisk ? "Month " + firstRisk.month : "—";
+      $("safeGpVal").textContent = "—";
+      $("safeIntVal").textContent = "—";
+      $("safeExtVal").textContent = "—";
+    } else {
+      $("verdictTitle").textContent = "Latest safe roll: month " + lastSafe.month;
+      $("verdictSub").textContent = firstRisk ? "Risk from month " + firstRisk.month : "Risk from month — never";
+      var gpWord = lastSafe.gp >= 0 ? "GP " + C.money(lastSafe.gp) : "shortfall " + C.money(lastSafe.gp);
+      $("summarySentence").textContent =
+        "Latest safe roll: month " + lastSafe.month +
+        " — risk from month " + (firstRisk ? firstRisk.month : "—") +
+        ". " + gpWord +
+        "; internal " + C.money(lastSafe.intPayout) +
+        "; external " + C.money(lastSafe.extPayout) + " (+1 mo).";
+      $("safeMonthVal").textContent = "Month " + lastSafe.month;
+      $("riskMonthVal").textContent = firstRisk ? "Month " + firstRisk.month : "Never";
+      $("safeGpVal").textContent = C.money(lastSafe.gp);
+      $("safeIntVal").textContent = C.money(lastSafe.intPayout);
+      $("safeExtVal").textContent = C.money(lastSafe.extPayout);
+    }
+
+    var uplift = C.totalsAtMonth(built.derived, 6);
+    var note =
+      "Start total " + C.money(built.derived.totalMonthly) +
+      " (finance/rental " + C.money(built.derived.capitalMonthly) +
+      " + service " + C.money(built.derived.serviceMonthly) + "). ";
+    if (inp.dealType === "rental") note += "Rental minimum does not escalate. ";
+    else if (inp.dealType === "printAdvantage") {
+      note += "First service uplift (month 6): service " + C.money(uplift.service) +
+        " → total " + C.money(uplift.total) + " (rental unchanged). ";
+    } else {
+      note += "First +6% on total (month 6) → " + C.money(uplift.total) + ". ";
+    }
+    if (inp.dealType === "rental") {
+      note += "Click charges are pay-as-you-go and not in the buyout minimum.";
+    }
+    $("vulnRuleNote").textContent = note;
+  }
+
+  function highlightSelected(month) {
+    document.querySelectorAll("#tableBody tr").forEach(function (tr) {
+      tr.classList.toggle("selected", Number(tr.getAttribute("data-month")) === month);
+    });
+  }
+
+  function renderTable(rows, safe, todayElapsed, selectedMonth) {
+    var tbody = $("tableBody");
+    tbody.innerHTML = "";
+    rows.forEach(function (r) {
+      var tr = document.createElement("tr");
+      tr.setAttribute("data-month", String(r.month));
+      if (safe.lastSafe && r.month === safe.lastSafe.month) tr.classList.add("safe-best");
+      if (r.atRisk) tr.classList.add("risk");
+      if (r.month === selectedMonth) tr.classList.add("selected");
+      var status = "";
+      if (safe.lastSafe && r.month === safe.lastSafe.month) status += '<span class="pill safe">LATEST SAFE</span> ';
+      if (r.atRisk) status += '<span class="pill risk">RISK</span> ';
+      if (todayElapsed != null && r.month === todayElapsed) status += '<span class="pill now">NOW</span> ';
+      if (!status) status = "Safe";
+      tr.innerHTML =
+        '<td class="text-left">' + (r.month === 0 ? "0 (start)" : r.month) + "</td>" +
+        "<td>" + r.remaining + "</td>" +
+        "<td>" + C.money(r.totalMin) + "</td>" +
+        "<td>" + C.money(r.serviceMonthly) + "</td>" +
+        "<td>" + C.money(r.intPayout) + "</td>" +
+        "<td>" + C.money(r.extPayout) + "</td>" +
+        "<td>" + C.money(r.replica) + "</td>" +
+        '<td class="' + (r.gp < 0 ? "neg" : "pos") + '">' + C.money(r.gp) + "</td>" +
+        '<td class="text-left">' + status + "</td>";
+      tr.style.cursor = "pointer";
+      tr.addEventListener("click", function () {
+        $("selectedMonth").value = String(r.month);
+        renderRateChart(r.month);
+        highlightSelected(r.month);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderRateChart(month) {
+    if (!lastRows || !lastInputs) return;
+    var r = lastRows[month];
+    var inp = lastInputs;
+    var principalUsed = r.gp >= 0 ? r.maxPrincipal : r.intPayout + inp.myCog;
+    var financeMonthly = C.round2(principalUsed * inp.factor / 100);
+    var totalNew = C.round2(financeMonthly + r.baseSvcNew);
+    var tbody = document.querySelector("#rateTable tbody");
+    tbody.innerHTML =
+      row("Type", C.TYPE_LABELS[inp.dealType]) +
+      row("Month", "Month " + r.month + " · " + r.remaining + " left") +
+      row("Current total minimum", C.money(r.totalMin)) +
+      row("Service that month", C.money(r.serviceMonthly)) +
+      row("Internal payout", C.money(r.intPayout) +
+        (inp.dealType === "printManagement" ? " (after overs " + C.money(r.oversCredit) + ")" : "")) +
+      row("External payout", C.money(r.extPayout) + " — includes +1 month (" + r.extMonthsUsed + " × total)") +
+      row("My COG", C.money(inp.myCog)) +
+      row("Max principal", C.money(r.maxPrincipal)) +
+      row("Your GP", r.gp >= 0 ? C.money(r.gp) : C.money(r.gp) + ' <span class="neg">(shortfall)</span>') +
+      row("New finance monthly", C.money(financeMonthly)) +
+      row("New base service monthly", C.money(r.baseSvcNew) +
+        (inp.dealType === "rental" ? " (0 — PAYG not in minimum)" : "")) +
+      row("New-deal total monthly", C.money(totalNew) + " vs current " + C.money(r.totalMin), true) +
+      row("Competitor replica", C.money(r.replica) + (r.atRisk ? " — AT RISK" : " — still above min"));
+    function row(k, v, em) {
+      return "<tr><th>" + k + "</th><td class=\"" + (em ? "em" : "") + "\">" + v + "</td></tr>";
+    }
+  }
+
+  function renderChart(rows, safe, todayElapsed) {
+    var canvas = $("chart");
+    var ctx = canvas.getContext("2d");
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = canvas.clientWidth || 1000, cssH = 240;
+    canvas.width = Math.floor(cssW * dpr); canvas.height = Math.floor(cssH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var pad = { t: 16, r: 16, b: 28, l: 52 };
+    var w = cssW - pad.l - pad.r, h = cssH - pad.t - pad.b;
+    var maxY = 1;
+    rows.forEach(function (r) { maxY = Math.max(maxY, r.replica, r.totalMin); });
+    maxY *= 1.1;
+    function x(i) { return pad.l + (i / 60) * w; }
+    function y(v) { return pad.t + h - (v / maxY) * h; }
+    ctx.clearRect(0, 0, cssW, cssH);
+    ctx.strokeStyle = "rgba(148,163,184,0.35)";
+    for (var g = 0; g <= 4; g++) {
+      var gy = pad.t + (h * g) / 4;
+      ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(pad.l + w, gy); ctx.stroke();
+      ctx.fillStyle = "#64748b"; ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif"; ctx.textAlign = "right";
+      ctx.fillText(Math.round(maxY * (1 - g / 4)).toLocaleString("en-AU"), pad.l - 6, gy + 3);
+    }
+    function draw(key, color) {
+      ctx.beginPath();
+      rows.forEach(function (r, i) {
+        var px = x(r.month), py = y(r[key]);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      });
+      ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.stroke();
+    }
+    draw("totalMin", "#0d5c63");
+    draw("replica", "#c45c26");
+    if (safe.lastSafe) {
+      var bx = x(safe.lastSafe.month);
+      ctx.strokeStyle = "#1f7a4d"; ctx.setLineDash([2, 2]);
+      ctx.beginPath(); ctx.moveTo(bx, pad.t); ctx.lineTo(bx, pad.t + h); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "#1f7a4d";
+      ctx.beginPath(); ctx.arc(bx, y(safe.lastSafe.totalMin), 4, 0, Math.PI * 2); ctx.fill();
+    }
+    if (todayElapsed != null) {
+      var tx = x(todayElapsed);
+      ctx.strokeStyle = "#334155";
+      ctx.beginPath(); ctx.moveTo(tx, pad.t); ctx.lineTo(tx, pad.t + h); ctx.stroke();
+    }
+    ctx.fillStyle = "#64748b"; ctx.textAlign = "center";
+    [0, 12, 24, 36, 48, 60].forEach(function (m) { ctx.fillText(String(m), x(m), cssH - 8); });
+  }
+
+  function applyQuery() {
+    var q = new URLSearchParams(window.location.search);
+    if (q.get("dealType")) setType(q.get("dealType"));
+    ["fixedRental", "bwVol", "colourVol", "bwCap", "colourCap", "bwSvc", "colourSvc",
+      "factor", "myCog", "compCog", "bwOvers", "colourOvers", "newBwSvc", "newColourSvc",
+      "startDate", "elapsed"].forEach(function (k) {
+      var map = { bwCap: "bwCap", colourCap: "colourCap", bwSvc: "bwSvc", colourSvc: "colourSvc",
+        newBwSvc: "newBwSvc", newColourSvc: "newColourSvc" };
+      var id = map[k] || k;
+      if (q.has(k) && $(id)) $(id).value = q.get(k);
+    });
+    if (q.has("bwCapCents")) $("bwCap").value = q.get("bwCapCents");
+    if (q.has("colourCapCents")) $("colourCap").value = q.get("colourCapCents");
+    if (q.has("bwSvcCents")) $("bwSvc").value = q.get("bwSvcCents");
+    if (q.has("colourSvcCents")) $("colourSvc").value = q.get("colourSvcCents");
+    if (q.has("newBwSvcCents")) $("newBwSvc").value = q.get("newBwSvcCents");
+    if (q.has("newColourSvcCents")) $("newColourSvc").value = q.get("newColourSvcCents");
+    return q.has("dealType") || q.has("bwVol") || q.has("fixedRental");
+  }
+
+  function applyDefaultFields(includeSvc) {
+    var defs = window.AppSettings ? AppSettings.load() : {
+      factorRate: 2, myCog: 5000, competitorCog: 5000, newBwSvcCents: 0.5, newColourSvcCents: 5
+    };
+    $("factor").value = defs.factorRate;
+    $("myCog").value = defs.myCog;
+    $("compCog").value = defs.competitorCog;
+    if (includeSvc) {
+      $("newBwSvc").value = defs.newBwSvcCents;
+      $("newColourSvc").value = defs.newColourSvcCents;
+    }
+  }
+
+  setType(dealType);
+  applyDefaultFields(true);
+  restore();
+  var fromQ = applyQuery();
+  updateLive();
+  if (fromQ) $("calc-form").requestSubmit();
+})();
+  </script>
+</body>
+</html>

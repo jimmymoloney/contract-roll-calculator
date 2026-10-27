@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard — Contract Roll Calculator</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar-root"></div>
+    <div class="main">
+      <div id="topbar-root"></div>
+      <div class="content">
+        <div id="emptyState" class="panel empty-state" hidden>
+          <h2>Try the demo</h2>
+          <p>This portfolio demo uses fictional customers only. Load the built-in sample to explore the dashboard, or upload your own spreadsheet on the Data page. Nothing leaves this browser.</p>
+          <div class="actions">
+            <button type="button" class="primary empty-cta" id="emptyLoadSample">Load sample data</button>
+            <a class="btn secondary" href="data.html">Upload spreadsheet</a>
+          </div>
+        </div>
+
+        <div id="dashContent" class="dash-bento" hidden>
+          <div class="bento-row bento-kpi-lg">
+            <div class="panel bento-kpi" id="kpiRevenue">
+              <div class="kpi-lbl">Revenue</div>
+              <div class="kpi-val" id="valRevenue">—</div>
+            </div>
+            <div class="panel bento-kpi" id="kpiGp">
+              <div class="kpi-lbl">GP</div>
+              <div class="kpi-val" id="valGp">—</div>
+              <div class="kpi-sub" id="valGpPct">GP% —</div>
+            </div>
+            <div class="panel bento-kpi" id="kpiCommit">
+              <div class="kpi-lbl">Sum total commitment</div>
+              <div class="kpi-val" id="valCommit">—</div>
+            </div>
+            <div class="panel bento-kpi" id="kpiDeals">
+              <div class="kpi-lbl">Deals</div>
+              <div class="kpi-val" id="valDeals">—</div>
+              <div class="kpi-sub" id="valNewBiz">—</div>
+            </div>
+          </div>
+
+          <div class="bento-row bento-kpi-sm">
+            <div class="panel bento-kpi sm">
+              <div class="kpi-lbl">Devices</div>
+              <div class="kpi-val" id="valDevices">—</div>
+            </div>
+            <div class="panel bento-kpi sm">
+              <div class="kpi-lbl">Avg min monthly</div>
+              <div class="kpi-val" id="valAvgMin">—</div>
+            </div>
+            <div class="panel bento-kpi sm">
+              <div class="kpi-lbl">Sum min monthly</div>
+              <div class="kpi-val" id="valSumMin">—</div>
+            </div>
+          </div>
+
+          <div class="bento-row bento-mid">
+            <section class="panel solid bento-mom">
+              <div class="card-head">
+                <div>
+                  <h2>Month over month</h2>
+                  <p class="hint">Revenue by calendar month in the selected range.</p>
+                </div>
+              </div>
+              <div class="chart-wrap dash-chart">
+                <canvas id="momChart" width="1000" height="260"></canvas>
+                <div id="momTip" class="chart-tip" hidden></div>
+              </div>
+              <button type="button" class="secondary dash-toggle" id="momTableToggle" aria-expanded="false">Show table</button>
+              <div id="momTableWrap" class="table-wrap dash-mom-table" hidden>
+                <table class="data" id="momTable">
+                  <thead>
+                    <tr>
+                      <th class="text-left">Month</th>
+                      <th>Deals</th>
+                      <th>Devices</th>
+                      <th>Revenue</th>
+                      <th>GP</th>
+                      <th>Min monthly (sum)</th>
+                      <th>Total commitment (sum)</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="panel solid bento-pipeline">
+              <h2>Roll pipeline</h2>
+              <p class="hint">Same buckets as Accounts to roll (all loaded deals).</p>
+              <div class="pipeline-list" id="pipelineList"></div>
+            </section>
+          </div>
+
+          <div class="bento-row bento-bottom">
+            <section class="panel solid bento-types">
+              <h2>Deal types</h2>
+              <p class="hint">In the selected date range.</p>
+              <div id="dealTypeBars" class="type-bars"></div>
+            </section>
+
+            <section class="panel solid bento-yoy">
+              <h2>Year over year</h2>
+              <p class="hint" id="yoyHint"></p>
+              <div id="yoyEmpty" class="yoy-empty" hidden>No deals in the same period last year to compare</div>
+              <div id="yoyBody">
+                <div class="metrics" id="yoyMetrics"></div>
+                <div class="table-wrap" style="margin-top:1rem;max-height:280px">
+                  <table class="data" id="yoyTable">
+                    <thead>
+                      <tr>
+                        <th class="text-left">Metric</th>
+                        <th>This period</th>
+                        <th>Same period last year</th>
+                        <th>Change</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <p class="footer-note">Dashboard uses the shared spreadsheet from Data</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="pm-calc.js"></script>
+  <script src="settings.js"></script>
+  <script src="sheet-store.js"></script>
+  <script src="sample-data.js"></script>
+  <script src="shell.js"></script>
+  <script>
+(function () {
+  "use strict";
+  var allRows = [];
+  var newBizMode = "flag";
+  var lastMomMonths = [];
+  var C = window.PMCalc;
+
+  var DATE_EXTRA =
+    '<div class="topbar-range" id="topbarRange">' +
+    '<label class="tr-field"><span>From</span><input type="date" id="dateFrom" /></label>' +
+    '<label class="tr-field"><span>To</span><input type="date" id="dateTo" /></label>' +
+    '<button type="button" class="secondary" id="resetRange">Reset</button>' +
+    "</div>";
+
+  AppShell.init({
+    active: "dashboard",
+    title: "Dashboard",
+    description: "Overview of deals for a date range — totals, month-over-month, and year-over-year.",
+    topbarExtra: DATE_EXTRA
+  });
+
+  function money(n) {
+    return AppShell.formatMoney(n);
+  }
+  function ymd(d) { return SheetStore.ymd(d); }
+  function monthKey(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  }
+  function monthLabel(key) {
+    var parts = String(key).split("-");
+    var names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    var mi = Number(parts[1]) - 1;
+    var yy = String(parts[0]).slice(2);
+    return (names[mi] || key) + " " + yy;
+  }
+
+  function summarise(rows) {
+    var s = { deals: rows.length, devices: 0, revenue: 0, gp: 0, minMonthly: 0, totalCommit: 0, newBiz: 0,
+      pm: 0, pa: 0, rent: 0, bad: 0 };
+    rows.forEach(function (r) {
+      s.devices += r.devices;
+      s.revenue += r.revenue;
+      s.gp += r.gp;
+      s.minMonthly += r.minMonthly;
+      s.totalCommit += r.totalCommit;
+      s.newBiz += newBizMode === "numeric" ? r.newBusinessNum : (r.newBusinessFlag ? 1 : 0);
+      if (!r.typeValid) s.bad++;
+      else if (r.dealType === "printManagement") s.pm++;
+      else if (r.dealType === "printAdvantage") s.pa++;
+      else if (r.dealType === "rental") s.rent++;
+    });
+    return s;
+  }
+
+  function filtered() {
+    var from = document.getElementById("dateFrom").value;
+    var to = document.getElementById("dateTo").value;
+    return allRows.filter(function (r) {
+      var ds = r.dateYmd || ymd(r.date);
+      if (from && ds < from) return false;
+      if (to && ds > to) return false;
+      return true;
+    });
+  }
+
+  function byMonth(rows) {
+    var map = {};
+    rows.forEach(function (r) {
+      var k = monthKey(r.date);
+      if (!map[k]) map[k] = [];
+      map[k].push(r);
+    });
+    return Object.keys(map).sort().map(function (k) {
+      return { key: k, summary: summarise(map[k]) };
+    });
+  }
+
+  function metric(lbl, val) {
+    return '<div class="metric"><div class="lbl">' + lbl + '</div><div class="val">' + val + "</div></div>";
+  }
+
+  function setRangeFromData() {
+    if (!allRows.length) return;
+    var min = allRows[0].date, max = allRows[0].date;
+    allRows.forEach(function (r) {
+      if (r.date < min) min = r.date;
+      if (r.date > max) max = r.date;
+    });
+    document.getElementById("dateFrom").value = ymd(min);
+    document.getElementById("dateTo").value = ymd(max);
+  }
+
+  function showEmpty(empty) {
+    AppShell.setEmptyState(empty, "dashContent");
+    var range = document.getElementById("topbarRange");
+    if (range) range.hidden = !!empty;
+  }
+
+  function rollPipelineCounts() {
+    var soon = window.AppSettings ? AppSettings.load().rollSoonWindowMonths : 6;
+    var counts = { now: 0, soon: 0, build: 0 };
+    allRows.forEach(function (row) {
+      if (!row.typeValid) return;
+      var snap = C.snapshotAt(SheetStore.toCalcInput(row), row.elapsed);
+      var b = C.priorityBucket(snap, soon);
+      counts[b]++;
+    });
+    return counts;
+  }
+
+  function renderPipeline() {
+    var c = rollPipelineCounts();
+    var items = [
+      { key: "now", label: "Roll now", count: c.now, cls: "now" },
+      { key: "soon", label: "Roll soon", count: c.soon, cls: "soon" },
+      { key: "build", label: "Build relationship", count: c.build, cls: "build" }
+    ];
+    document.getElementById("pipelineList").innerHTML = items.map(function (it) {
+      return '<a class="pipeline-item ' + it.cls + '" href="accounts-to-roll.html?bucket=' + it.key + '">' +
+        '<span class="pi-label">' + it.label + "</span>" +
+        '<span class="pi-count">' + it.count + "</span></a>";
+    }).join("");
+  }
+
+  function renderDealTypes(s) {
+    var total = s.pm + s.pa + s.rent || 1;
+    var parts = [
+      { label: "Print Management", n: s.pm, cls: "pm" },
+      { label: "Print Advantage", n: s.pa, cls: "pa" },
+      { label: "Rental", n: s.rent, cls: "rent" }
+    ];
+    document.getElementById("dealTypeBars").innerHTML = parts.map(function (p) {
+      var pct = Math.round((p.n / total) * 100);
+      return '<div class="type-bar-row">' +
+        '<div class="tb-meta"><span>' + p.label + "</span><strong>" + p.n + "</strong></div>" +
+        '<div class="tb-track"><div class="tb-fill ' + p.cls + '" style="width:' + pct + '%"></div></div>' +
+        "</div>";
+    }).join("") + (s.bad
+      ? '<p class="hint" style="margin:0.75rem 0 0">Needs review: ' + s.bad + "</p>"
+      : "");
+  }
+
+  function render() {
+    var rows = filtered();
+    var s = summarise(rows);
+    document.getElementById("valRevenue").textContent = money(s.revenue);
+    document.getElementById("valGp").textContent = money(s.gp);
+    document.getElementById("valGpPct").textContent = s.revenue
+      ? "GP% " + ((s.gp / s.revenue) * 100).toFixed(1) + "%"
+      : "GP% —";
+    document.getElementById("valCommit").textContent = money(s.totalCommit);
+    document.getElementById("valDeals").textContent = String(s.deals);
+    document.getElementById("valNewBiz").textContent = newBizMode === "numeric"
+      ? money(s.newBiz) + " new business"
+      : s.newBiz + " new business";
+    document.getElementById("valDevices").textContent = String(s.devices);
+    document.getElementById("valAvgMin").textContent = s.deals ? money(s.minMonthly / s.deals) : "—";
+    document.getElementById("valSumMin").textContent = money(s.minMonthly);
+
+    renderDealTypes(s);
+    renderPipeline();
+
+    var months = byMonth(rows);
+    document.querySelector("#momTable tbody").innerHTML = months.map(function (m) {
+      return "<tr><td class=\"text-left\">" + monthLabel(m.key) + "</td><td>" + m.summary.deals + "</td><td>" +
+        m.summary.devices + "</td><td>" + money(m.summary.revenue) + "</td><td>" + money(m.summary.gp) +
+        "</td><td>" + money(m.summary.minMonthly) + "</td><td>" + money(m.summary.totalCommit) + "</td></tr>";
+    }).join("") || "<tr><td colspan=\"7\" class=\"text-left\">No deals in this range.</td></tr>";
+    drawMomChart(months);
+    renderYoY(rows);
+  }
+
+  function renderYoY(currentRows) {
+    var from = document.getElementById("dateFrom").value;
+    var to = document.getElementById("dateTo").value;
+    var yoyEmpty = document.getElementById("yoyEmpty");
+    var yoyBody = document.getElementById("yoyBody");
+    if (!from || !to) {
+      document.getElementById("yoyHint").textContent = "Set From and To dates for a year-over-year comparison.";
+      yoyEmpty.hidden = true;
+      yoyBody.hidden = true;
+      return;
+    }
+    var fromD = new Date(from + "T00:00:00");
+    var toD = new Date(to + "T00:00:00");
+    var priorFrom = new Date(fromD); priorFrom.setFullYear(priorFrom.getFullYear() - 1);
+    var priorTo = new Date(toD); priorTo.setFullYear(priorTo.getFullYear() - 1);
+    var priorRows = allRows.filter(function (r) {
+      var t = r.date.getTime();
+      return t >= priorFrom.getTime() && t <= priorTo.getTime();
+    });
+
+    if (!priorRows.length) {
+      document.getElementById("yoyHint").textContent =
+        "This period " + from + " → " + to + " vs " + ymd(priorFrom) + " → " + ymd(priorTo) + ".";
+      yoyEmpty.hidden = false;
+      yoyBody.hidden = true;
+      return;
+    }
+
+    yoyEmpty.hidden = true;
+    yoyBody.hidden = false;
+    var cur = summarise(currentRows);
+    var pri = summarise(priorRows);
+    document.getElementById("yoyHint").textContent =
+      "This period " + from + " → " + to + " vs " + ymd(priorFrom) + " → " + ymd(priorTo) +
+      " (" + priorRows.length + " deals last year).";
+    function pct(a, b) {
+      if (!b) return a ? "n/a" : "—";
+      var p = ((a - b) / Math.abs(b)) * 100;
+      return (p >= 0 ? "+" : "") + p.toFixed(1) + "%";
+    }
+    function delta(a, b, isMoney) {
+      var d = a - b;
+      var shown;
+      if (d > 0) shown = "+" + (isMoney ? money(d) : d);
+      else if (d < 0) shown = isMoney ? "-" + money(Math.abs(d)) : String(d);
+      else shown = isMoney ? money(0) : "0";
+      return shown + " (" + pct(a, b) + ")";
+    }
+    document.getElementById("yoyMetrics").innerHTML =
+      metric("Revenue YoY", pct(cur.revenue, pri.revenue)) +
+      metric("GP YoY", pct(cur.gp, pri.gp)) +
+      metric("Deals YoY", pct(cur.deals, pri.deals));
+    var lines = [
+      ["Deals", cur.deals, pri.deals, false],
+      ["Devices", cur.devices, pri.devices, false],
+      ["Revenue", cur.revenue, pri.revenue, true],
+      ["GP", cur.gp, pri.gp, true],
+      ["Sum min monthly", cur.minMonthly, pri.minMonthly, true],
+      ["Sum total commitment", cur.totalCommit, pri.totalCommit, true]
+    ];
+    document.querySelector("#yoyTable tbody").innerHTML = lines.map(function (L) {
+      return "<tr><td class=\"text-left\">" + L[0] + "</td><td>" +
+        (L[3] ? money(L[1]) : L[1]) + "</td><td>" +
+        (L[3] ? money(L[2]) : L[2]) + "</td><td>" +
+        delta(L[1], L[2], L[3]) + "</td></tr>";
+    }).join("");
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    var rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function drawMomChart(months) {
+    lastMomMonths = months;
+    var canvas = document.getElementById("momChart");
+    var tip = document.getElementById("momTip");
+    tip.hidden = true;
+    var ctx = canvas.getContext("2d");
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = canvas.clientWidth || 1000, cssH = 260;
+    canvas.width = Math.floor(cssW * dpr); canvas.height = Math.floor(cssH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+    if (!months.length) return;
+
+    var pad = { t: 20, r: 16, b: 36, l: 56 };
+    var w = cssW - pad.l - pad.r, h = cssH - pad.t - pad.b;
+    var maxV = Math.max.apply(null, months.map(function (m) { return m.summary.revenue; })) || 1;
+    var slot = w / months.length;
+    var barW = Math.max(6, slot * 0.58);
+    var bars = [];
+
+    // gridlines
+    ctx.strokeStyle = "rgba(100,116,139,0.28)";
+    ctx.lineWidth = 1;
+    ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
+    ctx.fillStyle = "#64748b";
+    ctx.textAlign = "right";
+    for (var g = 0; g <= 4; g++) {
+      var gy = pad.t + (h * g) / 4;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, gy);
+      ctx.lineTo(pad.l + w, gy);
+      ctx.stroke();
+      ctx.fillText(Math.round(maxV * (1 - g / 4)).toLocaleString("en-AU"), pad.l - 8, gy + 4);
+    }
+
+    months.forEach(function (m, i) {
+      var cx = pad.l + (i + 0.5) * slot;
+      var bh = Math.max(2, (m.summary.revenue / maxV) * h);
+      var x = cx - barW / 2;
+      var y = pad.t + h - bh;
+      var grad = ctx.createLinearGradient(0, y, 0, y + bh);
+      grad.addColorStop(0, "#22d3ee");
+      grad.addColorStop(1, "#0891b2");
+      ctx.fillStyle = grad;
+      roundRect(ctx, x, y, barW, bh, Math.min(8, barW / 2));
+      ctx.fill();
+      bars.push({ x: x, y: y, w: barW, h: bh, m: m, cx: cx });
+
+      ctx.fillStyle = "#64748b";
+      ctx.textAlign = "center";
+      ctx.font = "10px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText(monthLabel(m.key), cx, cssH - 10);
+    });
+
+    canvas._momBars = bars;
+    canvas._momPad = pad;
+  }
+
+  function wireChartHover() {
+    var canvas = document.getElementById("momChart");
+    var tip = document.getElementById("momTip");
+    canvas.addEventListener("mousemove", function (e) {
+      var bars = canvas._momBars;
+      if (!bars || !bars.length) { tip.hidden = true; return; }
+      var rect = canvas.getBoundingClientRect();
+      var x = e.clientX - rect.left;
+      var y = e.clientY - rect.top;
+      var hit = null;
+      for (var i = 0; i < bars.length; i++) {
+        var b = bars[i];
+        if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) { hit = b; break; }
+      }
+      if (!hit) {
+        // also hit by x slot for easier hover
+        for (i = 0; i < bars.length; i++) {
+          b = bars[i];
+          if (Math.abs(x - b.cx) <= b.w) { hit = b; break; }
+        }
+      }
+      if (!hit) { tip.hidden = true; return; }
+      tip.hidden = false;
+      tip.textContent = monthLabel(hit.m.key) + " · " + money(hit.m.summary.revenue);
+      tip.style.left = Math.min(rect.width - 120, Math.max(8, hit.cx - 60)) + "px";
+      tip.style.top = Math.max(8, hit.y - 28) + "px";
+    });
+    canvas.addEventListener("mouseleave", function () { tip.hidden = true; });
+  }
+
+  function tryRestore() {
+    var data = SheetStore.load();
+    if (!data || !data.rows.length) {
+      showEmpty(true);
+      AppShell.updateStatusCard();
+      return;
+    }
+    allRows = data.rows;
+    newBizMode = data.newBizMode;
+    showEmpty(false);
+    setRangeFromData();
+    render();
+    AppShell.updateStatusCard();
+  }
+
+  document.getElementById("emptyLoadSample").addEventListener("click", function () {
+    try {
+      var parsed = SheetStore.loadSampleData();
+      SheetStore.save({ rows: parsed.rows, newBizMode: parsed.newBizMode, fileName: "sample-deals.csv (built-in)" });
+      tryRestore();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+
+  document.getElementById("dateFrom").addEventListener("change", render);
+  document.getElementById("dateTo").addEventListener("change", render);
+  document.getElementById("resetRange").addEventListener("click", function () {
+    setRangeFromData(); render();
+  });
+  document.getElementById("momTableToggle").addEventListener("click", function () {
+    var wrap = document.getElementById("momTableWrap");
+    var btn = document.getElementById("momTableToggle");
+    var open = wrap.hidden;
+    wrap.hidden = !open;
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+    btn.textContent = open ? "Hide table" : "Show table";
+  });
+
+  wireChartHover();
+  window.addEventListener("resize", function () {
+    if (lastMomMonths.length) drawMomChart(lastMomMonths);
+  });
+
+  tryRestore();
+})();
+  </script>
+</body>
+</html>
