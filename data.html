@@ -18,6 +18,7 @@
           <div class="actions">
             <button type="button" class="primary empty-cta" id="loadSample">Load sample data</button>
             <a class="btn secondary" href="sample/sample-deals.csv" download>Download sample CSV</a>
+            <a class="btn secondary" href="sample/upload-template.csv" download="upload-template.csv">Download blank template</a>
           </div>
         </section>
 
@@ -44,7 +45,7 @@
           <details>
             <summary style="cursor:pointer;font-weight:700;font-size:1.05rem;color:#fff">Spreadsheet format</summary>
             <div style="margin-top:1rem">
-              <p class="hint">Column names are flexible (capitals ignored).</p>
+              <p class="hint">Column names are flexible (capitals ignored). Use <strong>Download blank template</strong> for a ready-made header row plus three example deals.</p>
               <ul class="cols-list">
                 <li><code>Customer</code> (recommended — for quick-select)</li>
                 <li><code>Date of Deal Won</code>, <code>New Devices</code>, <code>Revenue</code>, <code>GP</code></li>
@@ -54,6 +55,161 @@
                 <li><code>Deal Print Management?</code>, <code>Deal Print Advantage?</code>, <code>Deal Rental?</code></li>
                 <li>Optional: overs, Factor, My COG, Competitor COG</li>
               </ul>
+
+              <h3 class="column-guide-heading">Column guide</h3>
+              <div class="table-wrap column-guide-wrap">
+                <table class="data column-guide">
+                  <thead>
+                    <tr>
+                      <th class="text-left">Column</th>
+                      <th class="text-left">Required?</th>
+                      <th class="text-left">Example</th>
+                      <th class="text-left">Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="text-left"><code>Customer</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">Example Co A</td>
+                      <td class="text-left">Account name for lists and quick-select.</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Date of Deal Won</code></td>
+                      <td class="text-left">Required</td>
+                      <td class="text-left">2024-06-01</td>
+                      <td class="text-left">When the deal started (or month/year like 6/2024).</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>New Devices</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">2</td>
+                      <td class="text-left">Devices sold on this deal (Dashboard stats).</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Revenue</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">25000</td>
+                      <td class="text-left">Deal revenue for Dashboard totals.</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>GP</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">6000</td>
+                      <td class="text-left">Gross profit recorded on the original deal.</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Fixed Rental</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">200</td>
+                      <td class="text-left">Monthly fixed rental (Print Advantage / Rental).</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>B/W Included</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">5000</td>
+                      <td class="text-left">Black-and-white pages included each month.</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Copy Cost B/W</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">1</td>
+                      <td class="text-left">B/W service rate (¢/page, or $/page if under 0.1).</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Rental Capital B/W</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">10</td>
+                      <td class="text-left">B/W capital in the click rate (Print Management).</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Colour Included</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">2000</td>
+                      <td class="text-left">Colour pages included each month.</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Copy Cost Colour</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">6</td>
+                      <td class="text-left">Colour service rate (¢/page, or $/page if under 0.1).</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Rental Capital Colour</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">12</td>
+                      <td class="text-left">Colour capital in the click rate (Print Management).</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Minimum monthly Commitment</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">910</td>
+                      <td class="text-left">Customer’s current monthly minimum ($).</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Total Customer Commitment</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">54600</td>
+                      <td class="text-left">Full contract value for Dashboard.</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>New Business</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">Yes</td>
+                      <td class="text-left">Yes/No (or a dollar amount) for new-business reporting.</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Deal Print Management?</code></td>
+                      <td class="text-left">Required*</td>
+                      <td class="text-left">Yes</td>
+                      <td class="text-left">Mark Yes if this is a Print Management deal.</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Deal Print Advantage?</code></td>
+                      <td class="text-left">Required*</td>
+                      <td class="text-left">Yes</td>
+                      <td class="text-left">Mark Yes if this is a Print Advantage deal.</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Deal Rental?</code></td>
+                      <td class="text-left">Required*</td>
+                      <td class="text-left">Yes</td>
+                      <td class="text-left">Mark Yes if this is a Rental deal.</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>B/W Overs</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">1000</td>
+                      <td class="text-left">Lifetime B/W clicks above included (PM payout credit).</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Colour Overs</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">500</td>
+                      <td class="text-left">Lifetime colour clicks above included (PM payout credit).</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Factor</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">2</td>
+                      <td class="text-left">Financing factor for this deal (else Settings default).</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>My COG</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">6000</td>
+                      <td class="text-left">Your cost of goods on a new roll ($).</td>
+                    </tr>
+                    <tr>
+                      <td class="text-left"><code>Competitor COG</code></td>
+                      <td class="text-left">Optional</td>
+                      <td class="text-left">6000</td>
+                      <td class="text-left">Assumed competitor cost of goods ($).</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="hint" style="margin-top:0.65rem">* Exactly one of the three deal-type columns should be Yes on each row.</p>
               <p class="hint" style="margin-top:0.85rem;margin-bottom:0">
                 Dates may be month/year only (<code>10/2026</code>).
                 Copy/capital rates may be dollars per page (<code>0.005</code>) or cents (<code>0.5</code>).

@@ -1,0 +1,4 @@
+Customer,Date of Deal Won,New Devices,Revenue,GP,Fixed Rental,B/W Included,Copy Cost B/W,Rental Capital B/W,Colour Included,Copy Cost Colour,Rental Capital Colour,Minimum monthly Commitment,Total Customer Commitment,New Business,Deal Print Management?,Deal Print Advantage?,Deal Rental?,B/W Overs,Colour Overs,Factor,My COG,Competitor COG
+Example Co A,2024-06-01,2,25000,6000,0,5000,1,10,2000,6,12,910,54600,Yes,Yes,,,1000,500,2,6000,6000
+Example Co B,2024-07-01,1,15000,3500,200,2000,1,0,1000,6,0,280,16800,Yes,,Yes,,0,0,2,4000,4500
+Example Co C,2024-08-01,3,30000,7000,500,0,0,0,0,0,0,500,30000,No,,,Yes,0,0,2,8000,7500
