@@ -1684,7 +1684,9 @@ tr.selected td { outline: 2px solid var(--brand); outline-offset: -2px; }
   color: var(--ink);
   font-size: 0.95rem;
 }
-.help-article ul { padding-left: 1.25rem; margin: 0 0 var(--space-2); }
+.help-article ul,
+.help-article ol { padding-left: 1.25rem; margin: 0 0 var(--space-2); }
+.help-glossary li { margin-bottom: 0.35rem; }
 .help-article code {
   font-size: 0.85em;
   padding: 0.1rem 0.35rem;

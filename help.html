@@ -22,12 +22,31 @@
           <article class="panel solid help-article" id="app">
             <h1>How to use this app</h1>
 
-            <h2>Open in a real browser</h2>
-            <p>Double-click <code>index.html</code> (or open it in Chrome, Edge, or Safari). Upload may not work inside Cursor’s file preview — that is a browser limitation.</p>
-            <p>Keep the whole <code>docs</code> folder together (including <code>vendor/</code>) so fonts and the spreadsheet reader work offline.</p>
+            <h2>What this tool does</h2>
+            <p>In managed print, customers sit on long contracts. Re-sign (“roll”) too early and the remaining-term payout eats your margin; leave it too late and a competitor can afford to buy them out. This tool finds the best month to re-sign each customer — late enough to protect gross profit, early enough that a competitor still cannot beat your deal. Upload your book once, then use the Dashboard for overview, Accounts to roll for prioritised lists, and the Roll calculator for a month-by-month view of one customer. Everything runs in your browser; customer data never leaves this computer.</p>
 
-            <h2>One spreadsheet for everything</h2>
-            <p>Open <strong>Data</strong> to choose a spreadsheet, load sample data, or clear everything. Upload once; the browser keeps a local copy for Dashboard, Accounts, and Calculator until you clear it.</p>
+            <h2>Quick start</h2>
+            <ol>
+              <li>Open <strong>Data</strong> (or the empty Dashboard) and choose <strong>Load sample data</strong>.</li>
+              <li>Open <strong>Accounts to roll</strong> to see who is Roll now, Roll soon, or Build relationship.</li>
+              <li>Click a customer to open them in the <strong>Roll calculator</strong> and inspect latest safe month, payouts, and GP.</li>
+            </ol>
+
+            <h2>Glossary</h2>
+            <ul class="help-glossary">
+              <li><strong>Roll</strong> — Re-signing a customer onto a new contract before their current one ends.</li>
+              <li><strong>Latest safe month</strong> — The last month you can still roll before a competitor’s offer would beat the customer’s current minimum.</li>
+              <li><strong>Internal payout</strong> — What it costs you to buy out the remaining term (your own payout figure).</li>
+              <li><strong>External payout</strong> — What a competitor would typically need to pay to buy the customer out.</li>
+              <li><strong>COG</strong> — Cost of goods for the new deal (your cost vs a competitor’s).</li>
+              <li><strong>Factor rate</strong> — The financing factor used to turn monthly room into a maximum principal / GP figure.</li>
+              <li><strong>Overs</strong> — Lifetime click volume above the included amount; on Print Management they credit the internal payout.</li>
+              <li><strong>Competitor replica</strong> — A modelled competitor deal at current volumes and rates, used to judge when they can undercut you.</li>
+              <li><strong>GP</strong> — Gross profit available on the roll after internal payout and your COG.</li>
+            </ul>
+
+            <h2>Data</h2>
+            <p>Open <strong>Data</strong> to upload a spreadsheet, load sample data, or clear everything. Upload once; the browser keeps a local copy for Dashboard, Accounts, and Calculator until you clear it.</p>
             <p><strong>Clear all data</strong> (sidebar, Data, or Settings) wipes deals and settings from this browser.</p>
             <ul>
               <li>Dates may be month/year only (<code>10/2026</code>) — treated as the 1st of that month.</li>
@@ -51,43 +70,42 @@
 
           <article class="panel solid help-article" id="calculator" hidden>
             <h1>Roll calculator — three agreement types</h1>
-            <p>Term length, escalation %, and the extra months on competitor payout are editable under <strong>Settings</strong> (defaults below).</p>
+            <p>Term length, escalation %, and the extra months on competitor payout are editable under <strong>Settings</strong>.</p>
 
             <h2>Print Management</h2>
+            <p>Capital sits in the click rates (Rental Capital B/W and Colour), plus copy costs.</p>
             <ul>
-              <li>Capital in click rates (Rental Capital B/W / Colour) + copy costs.</li>
-              <li>Escalation every 6 months from start: 6% on the whole total; extra dollars onto service; capital fixed.</li>
-              <li>Overs (lifetime extras) × capital rates reduce <strong>internal</strong> payout only. Example: 1000 colour × 9.8¢ = $98.00.</li>
-              <li>Internal = capital monthly × remaining − overs credit.</li>
-              <li>External = current total × (remaining + 1).</li>
+              <li>Escalation every 6 months from start: 6% on the whole total; the uplift goes onto service; capital stays fixed.</li>
+              <li>Overs (lifetime extras × capital rates) reduce the <strong>internal</strong> payout only. Example: 1000 colour × 9.8¢ = $98.00.</li>
+              <li>Internal = capital monthly × months remaining − overs credit.</li>
+              <li>External = current total × (months remaining + 1).</li>
             </ul>
 
             <h2>Print Advantage</h2>
+            <p>Fixed rental plus copy costs. Example: $100.00 rental + 1000 B/W @ 0.5¢ + 1000 colour @ 5¢ = $55.00 service → $155.00 total.</p>
             <ul>
-              <li>Fixed rental + copy costs (e.g. $100.00 + 1000 B/W @ 0.5¢ + 1000 colour @ 5¢ = $55.00 service → $155.00 total).</li>
               <li>Escalation every 6 months from start: 6% on service only. First uplift: $55.00 × 1.06 = $58.30 → total $158.30 (rental stays $100.00).</li>
               <li>Overs do not reduce internal payout.</li>
-              <li>Internal = fixed rental × remaining. External = current total × (remaining + 1).</li>
+              <li>Internal = fixed rental × months remaining. External = current total × (months remaining + 1).</li>
             </ul>
 
             <h2>Rental</h2>
+            <p>Monthly minimum is fixed rental only — no included volume in the minimum. Copy costs on the sheet are pay-as-you-go and are not part of the buyout minimum.</p>
             <ul>
-              <li>Monthly minimum = fixed rental only. No included volume in the minimum.</li>
-              <li>Copy costs on the sheet are pay-as-you-go and not part of buyout minimum.</li>
               <li>No service escalation on the minimum.</li>
-              <li>Internal = rental × remaining. External = rental × (remaining + 1).</li>
-              <li>Risk compares competitor replica to rental only (base service floor = 0).</li>
+              <li>Internal = rental × months remaining. External = rental × (months remaining + 1).</li>
+              <li>Risk compares the competitor replica to rental only (base service floor = 0).</li>
             </ul>
 
             <h2>Shared for all types</h2>
             <ul>
-              <li>Factor rate, My COG, Competitor COG.</li>
-              <li>Latest safe roll month = last month before competitor replica monthly ≤ current minimum.</li>
+              <li>Uses factor rate, My COG, and Competitor COG from Settings (or the row).</li>
+              <li>Latest safe roll month = last month before the competitor replica monthly would be ≤ the current minimum.</li>
               <li>GP = max principal from monthly room − internal payout − My COG.</li>
             </ul>
 
             <h2>Customer quick-select</h2>
-            <p>Populate from the shared spreadsheet (Customer column recommended). Selecting a row sets type and fields; you can still edit afterwards.</p>
+            <p>Pick a customer from the shared spreadsheet (Customer column recommended). Selecting a row sets agreement type and fields; you can still edit afterwards.</p>
           </article>
         </div>
       </div>
@@ -103,7 +121,7 @@
   AppShell.init({
     active: "help",
     title: "Help",
-    description: "How to use the app and how the three agreement types work."
+    description: "What the tool does, how to get started, and how the three agreement types work."
   });
 
   function showSection(name) {
